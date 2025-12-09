@@ -17,8 +17,12 @@ const PORT = process.env.PORT || 3000;
 
 const otpStore = {}; // In-memory store for signup OTPs
 
-app.use(cors());
-// Increase the limit to 50mb so the server doesn't reject images
+app.use(cors({
+    origin: ["https://starlit-piroshki-054e2b.netlify.app", "http://localhost:5500", "http://127.0.0.1:5500"], // Replace with your ACTUAL Netlify link
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-phone"]
+}));// Increase the limit to 50mb so the server doesn't reject images
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
