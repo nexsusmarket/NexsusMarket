@@ -1260,5 +1260,5 @@ app.post('/api/user/contact-support', async (req, res) => {
 });
 
 
-// --- 5. START SERVER ---
+// -- 5. START SERVER --
 connectToDbAndStartServer();
