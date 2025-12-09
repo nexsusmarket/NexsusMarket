@@ -19,7 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleContainer = document.getElementById('toggle-container');
 
     let isSignIn = true;
-    const API_URL = 'http://localhost:3000';
+    
+    // FIX: Updated to live backend URL
+    const API_URL = 'https://nexus-backend.onrender.com';
 
     // --- ⭐ NEW: Loading Animation Function ---
     let loadingInterval = null;
@@ -222,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             startLoadingAnimation(signinButton, "Signing In"); // ⭐ Start loading
 
             try {
+                // FIX: Updated to live backend URL
                 const response = await fetch(`${API_URL}/signin`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

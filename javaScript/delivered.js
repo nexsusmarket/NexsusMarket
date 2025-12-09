@@ -1,8 +1,10 @@
 import { fetchUserData, addToCart } from './apiService.js';
 
-// --- API FUNCTIONS (Keep existing) ---
+// --- API FUNCTIONS (FIX: Updated to use live backend URL) ---
+const API_BASE_URL = 'https://nexus-backend.onrender.com';
+
 async function requestReturnOtp(itemId, reason) {
-    const response = await fetch('http://localhost:3000/api/user/returns/request-otp', {
+    const response = await fetch(`${API_BASE_URL}/api/user/returns/request-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-phone': localStorage.getItem('userAuthToken') },
         body: JSON.stringify({ itemId, reason })
@@ -15,7 +17,7 @@ async function requestReturnOtp(itemId, reason) {
 }
 
 async function finalizeReturn(itemId, otp) {
-    const response = await fetch('http://localhost:3000/api/user/returns/finalize', {
+    const response = await fetch(`${API_BASE_URL}/api/user/returns/finalize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-phone': localStorage.getItem('userAuthToken') },
         body: JSON.stringify({ itemId, otp })
@@ -28,7 +30,7 @@ async function finalizeReturn(itemId, otp) {
 }
 
 async function fetchOrderDetails(orderId) {
-    const response = await fetch(`http://localhost:3000/api/user/order/${orderId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/user/order/${orderId}`, {
         headers: { 'x-phone': localStorage.getItem('userAuthToken') }
     });
     if (!response.ok) {
@@ -39,7 +41,7 @@ async function fetchOrderDetails(orderId) {
 }
 
 async function submitReview(reviewData) {
-    const response = await fetch('http://localhost:3000/api/user/review', {
+    const response = await fetch(`${API_BASE_URL}/api/user/review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-phone': localStorage.getItem('userAuthToken') },
         body: JSON.stringify(reviewData)
