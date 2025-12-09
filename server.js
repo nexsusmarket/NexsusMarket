@@ -17,13 +17,8 @@ const PORT = process.env.PORT || 3000;
 
 const otpStore = {}; // In-memory store for signup OTPs
 
-// FIX: CORS Configuration to allow your Netlify URL
-app.use(cors({
-    origin: ["https://starlit-piroshki-054e2b.netlify.app", "http://localhost:5500", "http://127.0.0.1:5500"], 
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-phone"]
-}));
+// ADD THIS NEW LINE (Allows any Netlify link automatically)
+app.use(cors());
 
 // Increase the limit to 50mb so the server doesn't reject images
 app.use(express.json({ limit: '50mb' }));
