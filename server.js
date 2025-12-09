@@ -1,7 +1,6 @@
 // server.js
 
 const path = require('path');
-const { spawn } = require('child_process');
 const fs = require('fs');
 // --- 1. IMPORTS ---
 require('dotenv').config();
@@ -39,40 +38,161 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// --- HELPER FUNCTIONS ---
+// ============================================================
+//  👇 NEW JAVASCRIPT RECOMMENDATION ENGINE (No Python Needed) 👇
+// ============================================================
 
-function runRecommender(phone) {
-    console.log(`🧠 Triggering recommendation engine for user (phone): ${phone}`);
-    console.time(`recommender-execution-${phone}`);
-
-    // Use path.join for absolute paths to avoid "file not found" errors
-    const productFilePath = path.join(__dirname, 'products.json');
-    const pythonScriptPath = path.join(__dirname, 'recommender.py');
-
-    if (!fs.existsSync(productFilePath)) {
-        console.error("❌ products.json is missing. Cannot run recommender.");
-        console.timeEnd(`recommender-execution-${phone}`);
-        return;
-    }
-
-    // Spawn Python with absolute paths
-    const pythonProcess = spawn('python', [pythonScriptPath, phone, productFilePath, process.env.MONGO_URI]);
-
-    pythonProcess.stdout.on('data', (data) => {
-        console.log(`[Python Script Output]: ${data.toString().trim()}`);
-    });
-
-    pythonProcess.stderr.on('data', (data) => {
-        console.error(`[Python Script Error]: ${data.toString().trim()}`);
-    });
-
-    pythonProcess.on('close', (code) => {
-        console.timeEnd(`recommender-execution-${phone}`);
-        if (code !== 0) {
-            console.error(`Python script for user ${phone} exited with code ${code}`);
+// Helper: Flatten the nested product structure from products.json
+function getFlattenedProducts() {
+    try {
+        const productFilePath = path.join(__dirname, 'products.json');
+        if (!fs.existsSync(productFilePath)) {
+            console.error("❌ products.json not found. Recommendations cannot run.");
+            return [];
         }
-    });
+        
+        const rawData = fs.readFileSync(productFilePath, 'utf-8');
+        const nestedData = JSON.parse(rawData);
+        const flatList = [];
+
+        if (Array.isArray(nestedData)) {
+            nestedData.forEach(section => {
+                if (section.category && Array.isArray(section.category)) {
+                    section.category.forEach(cat => {
+                        if (cat.items && Array.isArray(cat.items)) {
+                            flatList.push(...cat.items);
+                        }
+                    });
+                } else if (section.name) {
+                    flatList.push(section);
+                }
+            });
+        }
+        return flatList;
+    } catch (err) {
+        console.error("Error loading products for recommendations:", err);
+        return [];
+    }
 }
+
+// Helpers: Similarity Logic
+function getBrand(name) {
+    return name ? name.split(' ')[0].toLowerCase() : "";
+}
+
+function getGender(name) {
+    if (!name) return "unisex";
+    const n = name.toLowerCase();
+    if (n.includes('men') || n.includes("men's") || n.includes('boy')) return 'male';
+    if (n.includes('women') || n.includes("women's") || n.includes('girl')) return 'female';
+    return 'unisex';
+}
+
+function calculateNameSimilarity(name1, name2) {
+    if (!name1 || !name2) return 0;
+    const set1 = new Set(name1.toLowerCase().split(' '));
+    const set2 = new Set(name2.toLowerCase().split(' '));
+    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const union = new Set([...set1, ...set2]);
+    return union.size > 0 ? intersection.size / union.size : 0;
+}
+
+// Main Function to Generate Recommendations
+async function generateAndSaveRecommendations(phone) {
+    console.log(`🧠 Running JS Recommendation Engine for: ${phone}`);
+    
+    try {
+        const user = await usersCollection.findOne({ phone });
+        if (!user) return;
+
+        const allProducts = getFlattenedProducts();
+        if (allProducts.length === 0) return;
+
+        const viewed = user.viewedItems || [];
+        const cart = user.cart || [];
+        const wishlist = user.wishlist || [];
+
+        // Combine interactions (Priority: Wishlist > Cart > Viewed)
+        const interactions = [...viewed, ...cart.reverse(), ...wishlist.reverse()];
+        if (interactions.length === 0) return;
+
+        const interactedNames = new Set(interactions.map(i => i.name));
+        const finalRecommendations = [];
+        const categories = [...new Set(interactions.map(i => i.category).filter(Boolean))];
+
+        for (const cat of categories) {
+            if (finalRecommendations.length >= 100) break;
+
+            const categoryInteractions = interactions.filter(i => i.category === cat);
+            
+            // Find candidates in this category that user hasn't seen
+            const candidates = allProducts.filter(p => p.category === cat && !interactedNames.has(p.name));
+
+            const scoredCandidates = candidates.map(product => {
+                let maxScore = 0;
+                categoryInteractions.forEach(trigger => {
+                    let score = 0;
+                    // 1. Brand Match
+                    if (getBrand(product.name) === getBrand(trigger.name)) score += 0.5;
+                    // 2. Name Similarity
+                    score += calculateNameSimilarity(product.name, trigger.name) * 0.5;
+                    // 3. Price Similarity
+                    if (['laptop', 'mobile'].includes(cat)) {
+                        const pPrice = parseFloat(product.price) || 0;
+                        const tPrice = parseFloat(trigger.price) || 0;
+                        if (tPrice > 0) {
+                            const diff = Math.abs(pPrice - tPrice) / tPrice;
+                            score += 0.3 * (1 - Math.min(diff, 1));
+                        }
+                    }
+                    // 4. Gender (Fashion)
+                    if (cat === 'fashion') {
+                        if (getGender(product.name) === getGender(trigger.name)) score += 0.4;
+                    }
+                    if (score > maxScore) maxScore = score;
+                });
+                return { product, score: maxScore };
+            });
+
+            // Sort by score and pick top 20
+            scoredCandidates.sort((a, b) => b.score - a.score);
+            const topPicks = scoredCandidates.slice(0, 20).map(s => s.product);
+            
+            topPicks.forEach(p => {
+                finalRecommendations.push(p);
+                interactedNames.add(p.name);
+            });
+        }
+
+        // Add history items to the list so user sees recently liked items
+        const historyItems = [];
+        const seenNames = new Set();
+        interactions.forEach(item => {
+            if (!seenNames.has(item.name)) {
+                historyItems.push(item);
+                seenNames.add(item.name);
+            }
+        });
+
+        // Final list: History + New Recommendations
+        const resultList = [...historyItems, ...finalRecommendations].slice(0, 100);
+
+        await usersCollection.updateOne(
+            { phone },
+            { $set: { recommendations: resultList } }
+        );
+        console.log(`✅ Recommendations updated for ${phone}. Count: ${resultList.length}`);
+
+    } catch (error) {
+        console.error("Error in JS Recommender:", error);
+    }
+}
+
+// ============================================================
+//  👆 END OF RECOMMENDATION ENGINE 👆
+// ============================================================
+
+
 async function connectToDbAndStartServer() {
     try {
         await client.connect();
@@ -148,48 +268,25 @@ async function processOrderStatusUpdates(user) {
             let pointsEarnedThisOrder = 0;
 
             const deliveredItemsWithDate = order.items.map(item => {
-                // 1. Get the Unit Price (Price Paid)
                 const finalPrice = item.pricePaid !== undefined ? item.pricePaid : item.price;
                 const quantity = item.quantity || 1;
-                
                 let pointsPerItem = 0;
 
-                // 2. Check Condition on UNIT PRICE
-                if (finalPrice > 100000) {
-                    pointsPerItem = 50;
-                } else if (finalPrice > 50000) {
-                    pointsPerItem = 40;
-                } else if (finalPrice > 25000) {
-                    pointsPerItem = 25;
-                } else if (finalPrice > 10000) {
-                    pointsPerItem = 15;
-                } else if (finalPrice > 5000) {
-                    pointsPerItem = 5;
-                } else {
-                    pointsPerItem = 2;
-                }
+                if (finalPrice > 100000) pointsPerItem = 50;
+                else if (finalPrice > 50000) pointsPerItem = 40;
+                else if (finalPrice > 25000) pointsPerItem = 25;
+                else if (finalPrice > 10000) pointsPerItem = 15;
+                else if (finalPrice > 5000) pointsPerItem = 5;
+                else pointsPerItem = 2;
 
-                // 3. Multiply by Quantity for the total reward
                 pointsEarnedThisOrder += (pointsPerItem * quantity);
 
-                return {
-                    ...item,
-                    orderId: order.orderId,
-                    deliveryDate: deliveryTimestamp,
-                    category: item.category || 'Unknown',
-                    reviewed: false,
-                    _id: new ObjectId()
-                };
+                return { ...item, orderId: order.orderId, deliveryDate: deliveryTimestamp, category: item.category || 'Unknown', reviewed: false, _id: new ObjectId() };
             });
 
-            // Update user points
-            if (pointsEarnedThisOrder > 0) {
-                user.rewardPoints += pointsEarnedThisOrder;
-            }
-
+            if (pointsEarnedThisOrder > 0) user.rewardPoints += pointsEarnedThisOrder;
             itemsToAddToDelivered.push(...deliveredItemsWithDate);
 
-            // Send Confirmation Email
             try {
                 await transporter.sendMail({
                     from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
@@ -210,37 +307,22 @@ async function processOrderStatusUpdates(user) {
     return { user, requiresDbUpdate };
 }
 
-// --- Helper: Recalculate Points based on UNIT PRICE ---
+// --- Helper: Recalculate Points ---
 function calculatePointsFromHistory(deliveredItems) {
     if (!deliveredItems || deliveredItems.length === 0) return 0;
-    
     let totalPoints = 0;
-    
     deliveredItems.forEach(item => {
-        // 1. Get Unit Price
         const finalPrice = item.pricePaid !== undefined ? item.pricePaid : item.price;
         const quantity = item.quantity || 1;
         let pointsPerItem = 0;
-
-        // 2. Check Condition on UNIT PRICE
-        if (finalPrice > 100000) {
-            pointsPerItem = 50;
-        } else if (finalPrice > 50000) {
-            pointsPerItem = 40;
-        } else if (finalPrice > 25000) {
-            pointsPerItem = 25;
-        } else if (finalPrice > 10000) {
-            pointsPerItem = 15;
-        } else if (finalPrice > 5000) {
-            pointsPerItem = 5;
-        } else {
-            pointsPerItem = 2;
-        }
-
-        // 3. Multiply by Quantity
+        if (finalPrice > 100000) pointsPerItem = 50;
+        else if (finalPrice > 50000) pointsPerItem = 40;
+        else if (finalPrice > 25000) pointsPerItem = 25;
+        else if (finalPrice > 10000) pointsPerItem = 15;
+        else if (finalPrice > 5000) pointsPerItem = 5;
+        else pointsPerItem = 2;
         totalPoints += (pointsPerItem * quantity);
     });
-    
     return totalPoints;
 }
 
@@ -251,17 +333,12 @@ function startScheduledTasks() {
         console.log('🕒 Running scheduled task: Checking all active orders...');
         try {
             const usersWithActiveOrders = await usersCollection.find({ "orders.status": { $nin: ["Delivered", "Cancelled"] } }).toArray();
-
             for (const user of usersWithActiveOrders) {
                 const { user: updatedUser, requiresDbUpdate } = await processOrderStatusUpdates(user);
-                
                 if (requiresDbUpdate) {
                     await usersCollection.updateOne(
                         { _id: user._id }, 
-                        { $set: { 
-                            orders: updatedUser.orders,
-                            deliveredItems: updatedUser.deliveredItems 
-                        }}
+                        { $set: { orders: updatedUser.orders, deliveredItems: updatedUser.deliveredItems }}
                     );
                     console.log(`   -> Background status updated for user: ${user.email}`);
                 }
@@ -501,13 +578,9 @@ app.get('/api/user/data', async (req, res) => {
         let user = await usersCollection.findOne({ phone });
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        // 1. Process status updates (Moves recently delivered items to history)
         const { user: updatedUser, requiresDbUpdate } = await processOrderStatusUpdates(user);
-        
-        // 2. FORCE RECALCULATE POINTS based on ALL delivered items (Past & Present)
         const correctPoints = calculatePointsFromHistory(updatedUser.deliveredItems);
-        
-        // 3. Update DB if status changed OR if points count was wrong
+
         if (requiresDbUpdate || user.rewardPoints !== correctPoints) {
             await usersCollection.updateOne(
                 { phone: updatedUser.phone }, 
@@ -517,8 +590,7 @@ app.get('/api/user/data', async (req, res) => {
                     rewardPoints: correctPoints // <--- Saves the corrected total
                 }}
             );
-            updatedUser.rewardPoints = correctPoints; // Ensure frontend sees the new value
-            console.log(`✅ Points synced for ${phone}: ${correctPoints}`);
+            updatedUser.rewardPoints = correctPoints;
         }
 
         res.json(updatedUser);
@@ -535,8 +607,6 @@ app.put('/api/user/profile-image', async (req, res) => {
 
     if (!phone) return res.status(401).json({ message: 'Not authenticated' });
     
-    // Safety check: MongoDB documents have a 16MB limit. 
-    // We limit the payload here to ensure we don't crash the DB entry.
     if (!image) return res.status(400).json({ message: 'No image data provided.' });
 
     try {
@@ -550,6 +620,8 @@ app.put('/api/user/profile-image', async (req, res) => {
         res.status(500).json({ message: 'Server error updating profile image' });
     }
 });
+
+// --- Wishlist, Cart & Interactions (Updated to trigger JS Recommendations) ---
 
 app.post('/api/user/wishlist', async (req, res) => {
     const phone = getPhone(req);
@@ -566,7 +638,9 @@ app.post('/api/user/wishlist', async (req, res) => {
             
         await usersCollection.updateOne({ phone }, updateOperation);
         
-        runRecommender(phone);
+        // Trigger Recommendations (JS Version)
+        generateAndSaveRecommendations(phone);
+        
         res.json({ success: true, message: 'Wishlist updated' });
     } catch (error) {
         res.status(500).json({ message: 'Server error updating wishlist' });
@@ -587,7 +661,9 @@ app.post('/api/user/cart', async (req, res) => {
             await usersCollection.updateOne({ phone }, { $push: { cart: product } });
         }
         
-        runRecommender(phone);
+        // Trigger Recommendations (JS Version)
+        generateAndSaveRecommendations(phone);
+
         res.json({ success: true, message: 'Cart updated' });
     } catch (error) {
         res.status(500).json({ message: 'Server error updating cart' });
@@ -601,7 +677,8 @@ app.put('/api/user/cart/quantity', async (req, res) => {
     try {
         if (newQuantity < 1) {
             await usersCollection.updateOne({ phone }, { $pull: { cart: { name: productName } } });
-            runRecommender(phone);
+            // Item removed -> Trigger Recommendations
+            generateAndSaveRecommendations(phone);
         } else {
             await usersCollection.updateOne({ phone, "cart.name": productName }, { $set: { "cart.$.quantity": newQuantity } });
         }
@@ -617,7 +694,8 @@ app.delete('/api/user/cart/remove', async (req, res) => {
     if (!phone) return res.status(401).json({ message: 'Not authenticated' });
     try {
         await usersCollection.updateOne({ phone }, { $pull: { cart: { name: productName } } });
-        runRecommender(phone);
+        // Item removed -> Trigger Recommendations
+        generateAndSaveRecommendations(phone);
         res.json({ success: true, message: 'Item removed from cart' });
     } catch (error) {
         res.status(500).json({ message: 'Server error removing item' });
@@ -906,7 +984,7 @@ app.post('/api/user/viewed', async (req, res) => {
             } 
         });
         
-        // Removed runRecommender(phone) to avoid running on every click
+        // Removed runRecommender(phone) to avoid running on every click to save resources
         
         res.json({ success: true, message: 'Viewed item updated.' });
     } catch (error) {
@@ -1035,7 +1113,9 @@ app.put('/api/user/cart/offer', async (req, res) => {
             return res.status(404).json({ message: 'Product not found in cart.' });
         }
         
-        runRecommender(phone);
+        // Trigger Recommendations (JS Version)
+        generateAndSaveRecommendations(phone);
+        
         res.json({ success: true, message: 'Offer updated successfully.' });
     } catch (error) {
         console.error("Error updating cart offer:", error);

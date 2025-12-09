@@ -3,8 +3,9 @@
 // 1. Import the lookup map from our new central data handler.
 import { productLookupMap } from './productData.js';
 
-const API_URL = 'http://localhost:3000/api/user';
-const AUTH_URL = 'http://localhost:3000'; // FIX: Added this line to define the missing AUTH_URL constant
+// Example (Use YOUR actual copied link):
+const API_URL = 'https://nexus-backend.onrender.com/api/user';
+const AUTH_URL = 'https://nexus-backend.onrender.com'; // FIX: Added this line to define the missing AUTH_URL constant
 
 function getAuthHeaders() {
     const token = localStorage.getItem('userAuthToken'); // This token is now the phone number
