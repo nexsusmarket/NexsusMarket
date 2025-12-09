@@ -3,9 +3,9 @@
 // 1. Import the lookup map from our new central data handler.
 import { productLookupMap } from './productData.js';
 
-// Example (Use YOUR actual copied link):
+// --- YOUR LIVE BACKEND URLs ---
 const API_URL = 'https://nexus-backend.onrender.com/api/user';
-const AUTH_URL = 'https://nexus-backend.onrender.com'; // FIX: Added this line to define the missing AUTH_URL constant
+const AUTH_URL = 'https://nexus-backend.onrender.com'; 
 
 function getAuthHeaders() {
     const token = localStorage.getItem('userAuthToken'); // This token is now the phone number
@@ -31,8 +31,11 @@ function getFullProduct(product) {
     return fullProduct;
 }
 
+// --- AUTHENTICATION FUNCTIONS (Fixed: Using AUTH_URL) ---
+
 export async function sendSignupOtp({ name, phone, email }) {
-    const response = await fetch(`http://localhost:3000/signup/send-otp`, {
+    // FIX: Using AUTH_URL instead of localhost
+    const response = await fetch(`${AUTH_URL}/signup/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, email }),
@@ -42,28 +45,9 @@ export async function sendSignupOtp({ name, phone, email }) {
     return data;
 }
 
-// ... add this function to the end of javascript/apiService.js
-
-export async function sendSupportTicket(category, message) {
-    try {
-        const response = await fetch(`${API_URL}/contact-support`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ category, message })
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to send message.');
-        }
-        return data;
-    } catch (error) {
-        console.error("[sendSupportTicket API Error]", error);
-        throw error;
-    }
-}
-
 export async function createAccount({ name, phone, email, password, otp }) {
-    const response = await fetch(`http://localhost:3000/signup`, {
+    // FIX: Using AUTH_URL instead of localhost
+    const response = await fetch(`${AUTH_URL}/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, email, password, otp }),
@@ -104,6 +88,26 @@ export async function verifyOtpAndReset({ email, otp, newPassword }) {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message);
     return data;
+}
+
+// --- DATA FUNCTIONS ---
+
+export async function sendSupportTicket(category, message) {
+    try {
+        const response = await fetch(`${API_URL}/contact-support`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ category, message })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to send message.');
+        }
+        return data;
+    } catch (error) {
+        console.error("[sendSupportTicket API Error]", error);
+        throw error;
+    }
 }
 
 export async function updateCartOffer(productName, offerId, accountNumber) {
@@ -380,7 +384,6 @@ export async function clearViewedItems() {
         throw error;
     }
 }
-// --- javascript/apiService.js ---
 
 export async function updateProfileImage(base64Image) {
     try {
@@ -403,7 +406,6 @@ export async function updateProfileImage(base64Image) {
         throw error;
     }
 }
-// --- javascript/apiService.js ---
 
 export async function deleteProfileImage() {
     try {
