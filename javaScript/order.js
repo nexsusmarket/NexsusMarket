@@ -36,16 +36,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     confirmCancelBtn.addEventListener('click', async () => {
         if (orderIdToCancel) {
+            // 1. Visual Feedback: Show spinner and disable button
             const originalText = confirmCancelBtn.innerText;
             confirmCancelBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Cancelling...`;
             confirmCancelBtn.disabled = true;
+
             try {
-                await cancelOrder(orderIdToCancel);
+                // 2. Call the API
+                console.log(`Attempting to cancel order: ${orderIdToCancel}`);
+                const response = await cancelOrder(orderIdToCancel);
+                
+                // 3. Success Handling
+                console.log("Cancellation successful:", response);
                 hideCancelModal();
+                
+                // 4. Show success message (Optional but helpful)
+                // You can reuse your showToast function if you export it, or use a simple alert
+                // alert("Order cancelled successfully."); 
+
+                // 5. Refresh the list to show the new "Cancelled" status
                 await refreshAndRenderOrders();
+
             } catch (error) {
-                alert("Failed to cancel order");
+                console.error("Cancellation failed:", error);
+                
+                // 6. Smarter Error Handling
+                // If the error message mentions "Email", the cancellation actually SUCCEEDED on the database side.
+                // So we should refresh anyway!
+                if (error.message && error.message.toLowerCase().includes('email')) {
+                    console.warn("Email failed, but order might be cancelled. Refreshing...");
+                    hideCancelModal();
+                    await refreshAndRenderOrders();
+                } else {
+                    alert(`Failed to cancel order: ${error.message || "Unknown error"}`);
+                }
             } finally {
+                // 7. Always reset the button
                 confirmCancelBtn.innerText = "Yes, Cancel Order";
                 confirmCancelBtn.disabled = false;
             }
