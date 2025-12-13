@@ -1,6 +1,13 @@
 // javascript/cart.js
 
-import { updateCartQuantity, removeFromCart, fetchUserData, updateCartOffer } from './apiService.js';
+import { 
+    updateCartQuantity, 
+    removeFromCart, 
+    fetchUserData, 
+    updateCartOffer,
+    requestDiscountCode, // Imported
+    verifyDiscountCode   // Imported
+} from './apiService.js';
 
 // --- Loading Animation Function ---
 let loadingInterval = null;
@@ -25,7 +32,6 @@ function stopLoadingAnimation(button, restoreText = null) {
     button.textContent = restoreText || button.dataset.originalText || 'Submit';
     button.disabled = false;
 }
-// --- End Loading Animation ---
 
 // --- Master list of all possible bank offers ---
 const ALL_BANK_OFFERS = [
@@ -64,38 +70,6 @@ function showToast(message, isError = false) {
     setTimeout(() => toast.classList.remove('toast-show'), 3000);
 }
 
-// --- Student Discount API Calls ---
-async function requestDiscountCode(studentEmail, productName) {
-    // FIX: Updated URL
-    const response = await fetch('https://nexus-backend.onrender.com/api/user/request-discount-code', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-phone': localStorage.getItem('userAuthToken')
-        },
-        body: JSON.stringify({ studentEmail, productName })
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message);
-    return result;
-}
-
-async function verifyDiscountCode(verificationCode, productName) {
-    // FIX: Updated URL
-    const response = await fetch('https://nexus-backend.onrender.com/api/user/verify-discount-code', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-phone': localStorage.getItem('userAuthToken')
-        },
-        body: JSON.stringify({ verificationCode, productName })
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message);
-    return result;
-}
-// --- End Student Discount API ---
-
 function renderCart(cartItems) {
     const itemsContainer = document.querySelector(".cart-items-section");
     const summaryContainer = document.querySelector(".cart-summary");
@@ -104,22 +78,20 @@ function renderCart(cartItems) {
         return;
     }
 
-    // Ensure cartItems is an array before proceeding
     const validCartItems = Array.isArray(cartItems) ? cartItems : [];
 
     if (validCartItems.length === 0) {
         summaryContainer.style.display = 'none';
-        itemsContainer.style.gridColumn = '1 / -1'; // Span full width
+        itemsContainer.style.gridColumn = '1 / -1'; 
         itemsContainer.innerHTML = `<div class="flex flex-col items-center justify-center p-12 bg-white rounded-lg shadow-md"><i class="fas fa-shopping-cart text-6xl text-gray-300 mb-6"></i><h2 class="text-2xl font-bold text-gray-800 mb-2">Your Cart is Empty</h2><p class="text-gray-500 mb-6">Looks like you haven't added anything yet.</p><a href="explore.html" class="bg-purple-600 text-white px-6 py-3 rounded-full font-bold hover:bg-purple-700 transition">Continue Shopping</a></div>`;
     } else {
         summaryContainer.style.display = 'block';
-        itemsContainer.style.gridColumn = 'auto'; // Reset grid column span
+        itemsContainer.style.gridColumn = 'auto'; 
         try {
             itemsContainer.innerHTML = validCartItems.map(product => {
-                // Defensive check for product structure
                 if (!product || typeof product.name === 'undefined' || typeof product.price === 'undefined' || typeof product.quantity === 'undefined') {
                     console.warn("Skipping rendering of invalid product item:", product);
-                    return ''; // Return empty string for invalid items
+                    return ''; 
                 }
 
                 const availableOffers = getBankOffersForPrice(product.price);
@@ -144,7 +116,6 @@ function renderCart(cartItems) {
                 }
                 if (finalPrice < 0) finalPrice = 0;
                 
-                // Added cursor-pointer to the image for better UX
                 const displayPriceHTML = (finalPrice < product.price) ? `<div class="flex flex-col items-end"><span class="text-red-500 font-bold text-lg">₹${(finalPrice * product.quantity).toFixed(2)}</span><span class="text-gray-400 line-through text-sm">₹${(product.price * product.quantity).toFixed(2)}</span></div>` : `<span class="font-bold text-lg">₹${(product.price * product.quantity).toFixed(2)}</span>`;
 
                 return `<div class="cart-item-row" data-product-name="${encodeURIComponent(product.name)}"><div class="cart-product-details"><img src="${product.image || 'placeholder.png'}" alt="${product.name}" class="cart-product-image cursor-pointer"><div class="cart-product-meta"><h2 class="cart-product-name">${product.name}</h2>${studentDiscountHTML}${customDropdownHTML}${accountNumberHTML}</div></div><div class="cart-quantity-selector"><div class="flex items-center border border-gray-300 rounded-md overflow-hidden"><button class="quantity-minus px-3 py-2 text-red-500 hover:bg-red-100 transition"><i class="fas fa-minus"></i></button><span class="quantity-display px-4 py-1 font-semibold">${product.quantity}</span><button class="quantity-plus px-3 py-2 text-green-600 hover:bg-green-100 transition"><i class="fas fa-plus"></i></button></div></div><div class="cart-price-display">${displayPriceHTML}</div><button class="cart-remove-button" aria-label="Remove item"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/></svg></button></div>`;
@@ -152,7 +123,7 @@ function renderCart(cartItems) {
         } catch (renderError) {
              console.error("Error during cart item rendering:", renderError);
              itemsContainer.innerHTML = `<p class="text-red-500 text-center col-span-full">Error rendering cart items. Please try refreshing.</p>`;
-             summaryContainer.style.display = 'none'; // Hide summary if items failed to render
+             summaryContainer.style.display = 'none'; 
         }
     }
     updateTotals();
@@ -161,7 +132,7 @@ function renderCart(cartItems) {
 function updateTotals() {
     const items = JSON.parse(localStorage.getItem('cartProducts')) || [];
     const address = JSON.parse(localStorage.getItem('deliveryAddress')) || {};
-    const validItems = Array.isArray(items) ? items.filter(p => p && typeof p.price === 'number' && typeof p.quantity === 'number') : []; // Filter out invalid items for calculation
+    const validItems = Array.isArray(items) ? items.filter(p => p && typeof p.price === 'number' && typeof p.quantity === 'number') : [];
 
     const totalItems = validItems.reduce((sum, p) => sum + p.quantity, 0);
 
@@ -211,7 +182,6 @@ async function setupCartPage() {
         return;
     }
 
-    // Modal References
     const accountNumberModal = document.getElementById('account-number-modal');
     const accountNumberForm = document.getElementById('account-number-form');
     const accountNumberInput = document.getElementById('account-number-input');
@@ -245,14 +215,10 @@ async function setupCartPage() {
         const cartData = userData.cart || [];
         const addressData = userData.address || {};
 
-        console.log("Cart data from server:", cartData);
-
-        // Update local storage *before* rendering
         localStorage.setItem('cartProducts', JSON.stringify(cartData));
         localStorage.setItem('deliveryAddress', JSON.stringify(addressData));
 
-        console.log("Rendering cart with items:", cartData);
-        renderCart(cartData); // Render using the fetched data
+        renderCart(cartData); 
 
         const locationDisplay = document.getElementById('delivery-location');
         const updateDisplayLocation = (address) => {
@@ -275,7 +241,6 @@ async function setupCartPage() {
          return;
     }
 
-    // --- Modal Event Listeners ---
     emailModalCloseBtn?.addEventListener('click', () => emailModal.classList.add('hidden'));
     emailForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -319,9 +284,9 @@ async function setupCartPage() {
             stopLoadingAnimation(submitBtn);
             showToast(result.message);
             codeModal.classList.add('hidden');
-            const freshUserData = await fetchUserData(); // Fetch updated data
+            const freshUserData = await fetchUserData(); 
             localStorage.setItem('cartProducts', JSON.stringify(freshUserData.cart));
-            renderCart(freshUserData.cart); // Re-render
+            renderCart(freshUserData.cart); 
             window.updateHeader?.();
         } catch (error) {
             stopLoadingAnimation(submitBtn);
@@ -356,9 +321,9 @@ async function setupCartPage() {
             await updateCartOffer(productForOffer.name, offerId, accountNumber);
             stopLoadingAnimation(submitBtn);
 
-            const freshUserData = await fetchUserData(); // Fetch updated data
+            const freshUserData = await fetchUserData(); 
             localStorage.setItem('cartProducts', JSON.stringify(freshUserData.cart));
-            renderCart(freshUserData.cart); // Re-render
+            renderCart(freshUserData.cart); 
             window.updateHeader?.();
 
             accountNumberModal.classList.add('hidden');
@@ -372,7 +337,6 @@ async function setupCartPage() {
         }
     });
 
-    // --- Main Event Listener for Cart Actions ---
     const cartContainer = document.querySelector(".cart-container");
     cartContainer.addEventListener('click', async (e) => {
         const target = e.target;
@@ -382,7 +346,6 @@ async function setupCartPage() {
         const row = target.closest('.cart-item-row');
         const productName = row ? decodeURIComponent(row.dataset.productName) : null;
         
-        // 🔥 FIX: IMAGE CLICK NAVIGATION
         if (target.classList.contains('cart-product-image')) {
             if (productName) {
                 e.preventDefault();
@@ -390,9 +353,7 @@ async function setupCartPage() {
                 return; 
             }
         }
-        // 🔥 END IMAGE CLICK NAVIGATION
 
-        // Custom Select Dropdown Logic
         if (trigger) {
             e.preventDefault();
             const wrapper = trigger.closest('.custom-select-wrapper');
@@ -403,7 +364,6 @@ async function setupCartPage() {
             return;
         }
 
-        // Custom Select Option Logic
         if (option) {
              e.stopPropagation();
             const wrapper = option.closest('.custom-select-wrapper');
@@ -433,7 +393,6 @@ async function setupCartPage() {
              return;
          }
 
-         // Close dropdown if clicking outside
          if (!target.closest('.custom-select-wrapper')) {
              document.querySelectorAll('.custom-select-wrapper.open').forEach(wrapper => {
                  wrapper.classList.remove('open');
@@ -453,7 +412,6 @@ async function setupCartPage() {
             return;
         }
 
-        // *** CHECKOUT BUTTON LOGIC ***
         if (button.classList.contains('cart-checkout-button')) {
             const currentCartItems = JSON.parse(localStorage.getItem('cartProducts')) || [];
             const deliveryAddress = JSON.parse(localStorage.getItem('deliveryAddress')) || {};
@@ -465,25 +423,20 @@ async function setupCartPage() {
                 showToast('Error: Please add a delivery address.', true); return;
             }
 
-            // Calculate final price BEFORE navigating
             const checkoutCartItems = currentCartItems.map(item => {
                 let finalPrice = item.price;
-                // Apply student discount first
                 if (item.discount > 0) {
                     finalPrice = finalPrice * (1 - item.discount / 100);
                 }
-                // Apply bank offer
                 const selectedOffer = ALL_BANK_OFFERS.find(offer => offer.id === item.selectedOfferId);
                 if (selectedOffer && selectedOffer.discount > 0) {
                     finalPrice = selectedOffer.isFlat ? finalPrice - selectedOffer.discount : finalPrice * (1 - selectedOffer.discount / 100);
                 }
                 if (finalPrice < 0) finalPrice = 0;
 
-                // Add the calculated pricePaid to the item object
                 return { ...item, pricePaid: finalPrice };
             });
 
-            // Save the cart WITH pricePaid specifically for checkout
             localStorage.setItem('checkoutReadyCart', JSON.stringify(checkoutCartItems));
 
             button.disabled = true;
@@ -492,13 +445,12 @@ async function setupCartPage() {
             return;
         }
         
-        // Handle Quantity and Remove buttons
         if (productName) {
             const product = (JSON.parse(localStorage.getItem('cartProducts')) || []).find(p => p.name === productName);
             if (!product) return;
 
             const qtyButtons = row.querySelectorAll('.quantity-plus, .quantity-minus, .cart-remove-button');
-            qtyButtons.forEach(btn => btn.disabled = true); // Disable buttons during update
+            qtyButtons.forEach(btn => btn.disabled = true); 
 
             try {
                  if (button.classList.contains('quantity-plus')) {
@@ -509,21 +461,18 @@ async function setupCartPage() {
                      await removeFromCart(productName);
                  }
 
-                 const freshUserData = await fetchUserData(); // Fetch latest data
+                 const freshUserData = await fetchUserData(); 
                  const serverCart = freshUserData.cart || [];
                  localStorage.setItem('cartProducts', JSON.stringify(serverCart));
-                 renderCart(serverCart); // Re-render with fresh data
+                 renderCart(serverCart); 
                  window.updateHeader?.();
              } catch (error) {
                  showToast(`Error updating cart: ${error.message}`, true);
-                 // Re-enable buttons on error only if the row still exists
                  const currentRow = document.querySelector(`.cart-item-row[data-product-name="${encodeURIComponent(productName)}"]`);
                  currentRow?.querySelectorAll('.quantity-plus, .quantity-minus, .cart-remove-button').forEach(btn => btn.disabled = false);
              }
-             // Buttons are implicitly re-enabled by the renderCart function replacing the HTML
         }
     });
 }
 
-// Ensure setup runs after the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', setupCartPage);

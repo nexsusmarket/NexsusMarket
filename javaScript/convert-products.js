@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-import('./javaScript/products.js').then(module => {
+import('./products.js').then(module => {
     const { product } = module;
     
     const flattenedProducts = [];
@@ -20,7 +20,7 @@ import('./javaScript/products.js').then(module => {
 
     const jsonContent = JSON.stringify(flattenedProducts, null, 2);
 
-    const outputPath = path.join(__dirname, 'products.json');
+    const outputPath = path.join(__dirname, './products.json');
 
     fs.writeFileSync(outputPath, jsonContent);
 

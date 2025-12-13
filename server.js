@@ -1,7 +1,9 @@
 // server.js
 
 const path = require('path');
+const { spawn } = require('child_process');
 const fs = require('fs');
+
 // --- 1. IMPORTS ---
 require('dotenv').config();
 const express = require('express');
@@ -11,18 +13,22 @@ const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 
-// --- 2. APP INITIALIZATION & MIDDLEWARE ---
+// --- 2. APP INITIALIZATION & CONFIGURATION ---
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 🧠 INTELLIGENT CONFIGURATION FOR EMAIL LINKS
+// If you are deploying, set 'FRONTEND_URL' in your Cloud Environment Variables.
+// If you are developing locally, you don't need to set it; it defaults to VS Code Live Server.
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://127.0.0.1:5500';
+
+console.log(`📧 Email Links will point to: ${FRONTEND_URL}`);
+
 const otpStore = {}; // In-memory store for signup OTPs
 
-// ADD THIS NEW LINE (Allows any Netlify link automatically)
+// Allow any origin (Localhost or Production) to access the API
 app.use(cors());
-
-// Increase the limit to 50mb so the server doesn't reject images
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json());
 
 // --- 3. MONGODB CONNECTION SETUP ---
 const uri = process.env.MONGO_URI;
@@ -40,230 +46,179 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// ============================================================
-//  👇 JAVASCRIPT RECOMMENDATION ENGINE (No Python Needed) 👇
-// ============================================================
+// --- HELPER FUNCTIONS ---
 
-// Helper: Flatten the nested product structure from products.json
-function getFlattenedProducts() {
-    try {
-        const productFilePath = path.join(__dirname, 'products.json');
-        if (!fs.existsSync(productFilePath)) {
-            console.error("❌ products.json not found. Recommendations cannot run.");
-            return [];
-        }
-        
-        const rawData = fs.readFileSync(productFilePath, 'utf-8');
-        const nestedData = JSON.parse(rawData);
-        const flatList = [];
+// Function to run the Python Recommender Script
+function runRecommender(phone) {
+    console.log(`🧠 Triggering recommendation engine for user (phone): ${phone}`);
+    console.time(`recommender-execution-${phone}`);
 
-        if (Array.isArray(nestedData)) {
-            nestedData.forEach(section => {
-                if (section.category && Array.isArray(section.category)) {
-                    section.category.forEach(cat => {
-                        if (cat.items && Array.isArray(cat.items)) {
-                            flatList.push(...cat.items);
-                        }
-                    });
-                } else if (section.name) {
-                    flatList.push(section);
-                }
-            });
-        }
-        return flatList;
-    } catch (err) {
-        console.error("Error loading products for recommendations:", err);
-        return [];
+    const productFilePath = path.join(__dirname, 'products.json');
+    const scriptPath = path.join(__dirname, 'recommender.py');
+
+    if (!fs.existsSync(productFilePath)) {
+        console.error("❌ products.json is missing. Cannot run recommender.");
+        console.timeEnd(`recommender-execution-${phone}`);
+        return;
     }
+
+    const mongoUri = process.env.MONGO_URI;
+
+    // ⭐ FIX: Smart Python Command
+    // Use 'python3' for Linux/Cloud/Mac, 'python' for Windows
+    const pythonCommand = process.platform === 'win32' ? 'python' : 'python3';
+
+    // Arguments: [script path, phone number, json file path, mongo connection string]
+    const pythonProcess = spawn(pythonCommand, [scriptPath, phone, productFilePath, mongoUri]);
+
+    pythonProcess.stdout.on('data', (data) => {
+        console.log(`[Python Script Output]: ${data.toString().trim()}`);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+        console.error(`[Python Script Error]: ${data.toString().trim()}`);
+    });
+
+    pythonProcess.on('close', (code) => {
+        console.timeEnd(`recommender-execution-${phone}`);
+        if (code !== 0) {
+            console.error(`Python script for user ${phone} exited with code ${code}`);
+        } else {
+            console.log(`✅ Recommendations updated successfully in Atlas for ${phone}`);
+        }
+    });
 }
 
-// Helpers: Similarity Logic
-function getBrand(name) {
-    return name ? name.split(' ')[0].toLowerCase() : "";
-}
-
-function getGender(name) {
-    if (!name) return "unisex";
-    const n = name.toLowerCase();
-    if (n.includes('men') || n.includes("men's") || n.includes('boy')) return 'male';
-    if (n.includes('women') || n.includes("women's") || n.includes('girl')) return 'female';
-    return 'unisex';
-}
-
-function calculateNameSimilarity(name1, name2) {
-    if (!name1 || !name2) return 0;
-    const set1 = new Set(name1.toLowerCase().split(' '));
-    const set2 = new Set(name2.toLowerCase().split(' '));
-    const intersection = new Set([...set1].filter(x => set2.has(x)));
-    const union = new Set([...set1, ...set2]);
-    return union.size > 0 ? intersection.size / union.size : 0;
-}
-
-// Main Function to Generate Recommendations
-async function generateAndSaveRecommendations(phone) {
-    console.log(`🧠 Running JS Recommendation Engine for: ${phone}`);
+// Function to Calculate Points based on History
+function calculatePointsFromHistory(deliveredItems) {
+    if (!deliveredItems || deliveredItems.length === 0) return 0;
     
-    try {
-        const user = await usersCollection.findOne({ phone });
-        if (!user) return;
+    let totalPoints = 0;
+    
+    deliveredItems.forEach(item => {
+        // Use pricePaid if available (discounted), else regular price
+        const finalPrice = item.pricePaid !== undefined ? item.pricePaid : item.price;
+        const quantity = item.quantity || 1;
+        let pointsPerItem = 0;
 
-        const allProducts = getFlattenedProducts();
-        if (allProducts.length === 0) return;
-
-        const viewed = user.viewedItems || [];
-        const cart = user.cart || [];
-        const wishlist = user.wishlist || [];
-
-        // Combine interactions (Priority: Wishlist > Cart > Viewed)
-        const interactions = [...viewed, ...cart.reverse(), ...wishlist.reverse()];
-        if (interactions.length === 0) return;
-
-        const interactedNames = new Set(interactions.map(i => i.name));
-        const finalRecommendations = [];
-        const categories = [...new Set(interactions.map(i => i.category).filter(Boolean))];
-
-        for (const cat of categories) {
-            if (finalRecommendations.length >= 100) break;
-
-            const categoryInteractions = interactions.filter(i => i.category === cat);
-            
-            // Find candidates in this category that user hasn't seen
-            const candidates = allProducts.filter(p => p.category === cat && !interactedNames.has(p.name));
-
-            const scoredCandidates = candidates.map(product => {
-                let maxScore = 0;
-                categoryInteractions.forEach(trigger => {
-                    let score = 0;
-                    // 1. Brand Match
-                    if (getBrand(product.name) === getBrand(trigger.name)) score += 0.5;
-                    // 2. Name Similarity
-                    score += calculateNameSimilarity(product.name, trigger.name) * 0.5;
-                    // 3. Price Similarity
-                    if (['laptop', 'mobile'].includes(cat)) {
-                        const pPrice = parseFloat(product.price) || 0;
-                        const tPrice = parseFloat(trigger.price) || 0;
-                        if (tPrice > 0) {
-                            const diff = Math.abs(pPrice - tPrice) / tPrice;
-                            score += 0.3 * (1 - Math.min(diff, 1));
-                        }
-                    }
-                    // 4. Gender (Fashion)
-                    if (cat === 'fashion') {
-                        if (getGender(product.name) === getGender(trigger.name)) score += 0.4;
-                    }
-                    if (score > maxScore) maxScore = score;
-                });
-                return { product, score: maxScore };
-            });
-
-            // Sort by score and pick top 20
-            scoredCandidates.sort((a, b) => b.score - a.score);
-            const topPicks = scoredCandidates.slice(0, 20).map(s => s.product);
-            
-            topPicks.forEach(p => {
-                finalRecommendations.push(p);
-                interactedNames.add(p.name);
-            });
+        // ⭐ TIERED LOGIC ⭐
+        if (finalPrice > 100000) {
+            pointsPerItem = 50;
+        } else if (finalPrice > 50000) {
+            pointsPerItem = 40;
+        } else if (finalPrice > 25000) {
+            pointsPerItem = 25;
+        } else if (finalPrice > 10000) {
+            pointsPerItem = 15;
+        } else if (finalPrice > 5000) {
+            pointsPerItem = 5;
+        } else {
+            pointsPerItem = 2; // Less than or equal to 5000
         }
 
-        // Add history items to the list so user sees recently liked items
-        const historyItems = [];
-        const seenNames = new Set();
-        interactions.forEach(item => {
-            if (!seenNames.has(item.name)) {
-                historyItems.push(item);
-                seenNames.add(item.name);
-            }
-        });
-
-        // Final list: History + New Recommendations
-        const resultList = [...historyItems, ...finalRecommendations].slice(0, 100);
-
-        await usersCollection.updateOne(
-            { phone },
-            { $set: { recommendations: resultList } }
-        );
-        console.log(`✅ Recommendations updated for ${phone}. Count: ${resultList.length}`);
-
-    } catch (error) {
-        console.error("Error in JS Recommender:", error);
-    }
-}
-// ============================================================
-
-
-async function connectToDbAndStartServer() {
-    try {
-        await client.connect();
-        const database = client.db("nexusMarketDB");
-        usersCollection = database.collection("users");
-        console.log("✅ Successfully connected to MongoDB.");
-
-        app.listen(PORT, () => {
-            console.log(`🚀 Server is running on http://localhost:${PORT}`);
-        });
-        
-        startScheduledTasks();
-    } catch (error) {
-        console.error("❌ Could not connect to MongoDB", error);
-        process.exit(1);
-    }
+        totalPoints += (pointsPerItem * quantity);
+    });
+    
+    return totalPoints;
 }
 
-// --- ORDER STATUS UPDATE FUNCTION ---
+// --- ORDER STATUS UPDATE AND EMAIL LOGIC ---
 async function processOrderStatusUpdates(user) {
     const today = new Date();
     let requiresDbUpdate = false;
     const itemsToAddToDelivered = [];
     
+    // Ensure points exist
     if (typeof user.rewardPoints !== 'number') user.rewardPoints = 0;
     if (!user.orders || user.orders.length === 0) return { user, requiresDbUpdate: false };
 
     for (const order of user.orders) {
+        // Skip completed orders
         if (order.status === 'Delivered' || order.status === 'Cancelled') continue;
 
+        // --- 1. Date Calculations ---
+        const orderDate = new Date(order.orderDate);
         const shippedDate = new Date(order.shippedDate);
-        const outForDeliveryDate = new Date(order.outForDeliveryDate);
-        const deliveryDate = new Date(order.estimatedDelivery);
+        const deliveryDate = new Date(order.estimatedDelivery); 
+
+        // Normalize dates to Midnight for accurate Day comparison
+        const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const deliveryDayDateOnly = new Date(deliveryDate.getFullYear(), deliveryDate.getMonth(), deliveryDate.getDate());
+        const shippedDayDateOnly = new Date(shippedDate.getFullYear(), shippedDate.getMonth(), shippedDate.getDate());
+
         let originalStatus = order.status;
 
-        const startOfDeliveryDay = new Date(deliveryDate.getFullYear(), deliveryDate.getMonth(), deliveryDate.getDate());
-        const startOfOutForDeliveryDay = new Date(outForDeliveryDate.getFullYear(), outForDeliveryDate.getMonth(), outForDeliveryDate.getDate());
+        // --- 2. Status Transition Logic ---
 
-        if (today >= startOfDeliveryDay && today.getHours() >= 13 && today.getMinutes() >= 30) { 
+        // A. Check for "Delivered" (Simulated at 1:30 PM on Delivery Day)
+        if (todayDateOnly >= deliveryDayDateOnly && today.getHours() >= 13 && today.getMinutes() >= 30) { 
             order.status = 'Delivered';
-        } else if (today >= startOfOutForDeliveryDay && today.getHours() >= 8) { 
+        } 
+        // B. Check for "Out for Delivery" (Trigger at 8:00 AM on Delivery Day)
+        else if (todayDateOnly >= deliveryDayDateOnly && today.getHours() >= 8) { 
             order.status = 'Out for Delivery';
-        } else if (today >= shippedDate) { 
+        } 
+        // C. Check for "Shipped"
+        else if (todayDateOnly >= shippedDayDateOnly) { 
             order.status = 'Shipped';
         }
 
         if (order.status !== originalStatus) requiresDbUpdate = true;
 
-        // Send OTP Email (Out for Delivery)
+        // --- 3. Email Notification Logic ---
+
+        // ➤ LOGIC 1: OUT FOR DELIVERY (Send OTP at 8 AM)
         if (order.status === 'Out for Delivery' && !order.outForDeliveryEmailSent) {
             order.outForDeliveryEmailSent = true;
-            order.deliveryOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            // Generate OTP if not exists
+            if (!order.deliveryOTP) {
+                order.deliveryOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            }
             requiresDbUpdate = true;
             
-            const emailHtml = `<div style="font-family: Arial, sans-serif; padding: 20px;"><h1>🚚 Out for Delivery!</h1><p>OTP: <strong>${order.deliveryOTP}</strong></p></div>`;
+            // Professional OTP Email Template
+            const otpEmailHtml = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                <div style="background-color: #4f46e5; padding: 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Out for Delivery</h1>
+                </div>
+                <div style="padding: 30px 20px; color: #374151;">
+                    <p style="font-size: 16px; margin-bottom: 20px;">Hello ${user.name},</p>
+                    <p style="font-size: 16px; line-height: 1.5; margin-bottom: 25px;">
+                        Your package for order <strong>#${order.orderId}</strong> has arrived at your local hub and is out for delivery today.
+                    </p>
+                    
+                    <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 25px;">
+                        <p style="margin: 0; font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Your Delivery OTP</p>
+                        <p style="margin: 10px 0 0 0; font-size: 32px; font-weight: bold; color: #111827; letter-spacing: 5px;">${order.deliveryOTP}</p>
+                    </div>
+
+                    <p style="font-size: 14px; color: #6b7280;">Please share this code with the delivery agent only when you receive the package.</p>
+                </div>
+                <div style="background-color: #f9fafb; padding: 15px; text-align: center; border-top: 1px solid #e5e7eb;">
+                    <p style="margin: 0; font-size: 12px; color: #9ca3af;">NexusMarket Logistics Team</p>
+                </div>
+            </div>`;
+
             try {
                 await transporter.sendMail({
-                    from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
+                    from: `"NexusMarket Logistics" <${process.env.EMAIL_USER}>`,
                     to: order.confirmationEmail,
-                    subject: `Order #${order.orderId} is Out for Delivery!`,
-                    html: emailHtml
+                    subject: `Out for Delivery: Order #${order.orderId} (OTP Inside)`,
+                    html: otpEmailHtml
                 });
-            } catch (e) { console.error(e); }
+                console.log(`📧 OTP Email sent for Order #${order.orderId} at ${new Date().toLocaleTimeString()}`);
+            } catch (e) { console.error("Error sending OTP email:", e); }
         }
 
-        // --- POINTS CALCULATION ---
+        // ➤ LOGIC 2: DELIVERED (Send Success Email - NO POINTS SHOWN)
         if (order.status === 'Delivered' && !order.deliveryConfirmationEmailSent) {
             const deliveryTimestamp = new Date().toISOString();
             order.deliveryConfirmationEmailSent = true;
             order.actualDeliveryDate = deliveryTimestamp;
             requiresDbUpdate = true;
 
+            // Calculate points internally (for DB only)
             let pointsEarnedThisOrder = 0;
 
             const deliveredItemsWithDate = order.items.map(item => {
@@ -271,19 +226,13 @@ async function processOrderStatusUpdates(user) {
                 const quantity = item.quantity || 1;
                 let pointsPerItem = 0;
 
-                if (finalPrice > 100000) {
-                    pointsPerItem = 50;
-                } else if (finalPrice > 50000) {
-                    pointsPerItem = 40;
-                } else if (finalPrice > 25000) {
-                    pointsPerItem = 25;
-                } else if (finalPrice > 10000) {
-                    pointsPerItem = 15;
-                } else if (finalPrice > 5000) {
-                    pointsPerItem = 5;
-                } else {
-                    pointsPerItem = 2;
-                }
+                // Tiered Logic
+                if (finalPrice > 100000) pointsPerItem = 50;
+                else if (finalPrice > 50000) pointsPerItem = 40;
+                else if (finalPrice > 25000) pointsPerItem = 25;
+                else if (finalPrice > 10000) pointsPerItem = 15;
+                else if (finalPrice > 5000) pointsPerItem = 5;
+                else pointsPerItem = 2;
 
                 pointsEarnedThisOrder += (pointsPerItem * quantity);
 
@@ -297,23 +246,57 @@ async function processOrderStatusUpdates(user) {
                 };
             });
 
+            // Update user points silently in DB
             if (pointsEarnedThisOrder > 0) {
                 user.rewardPoints += pointsEarnedThisOrder;
             }
 
+            // Move items to History
             itemsToAddToDelivered.push(...deliveredItemsWithDate);
+
+            // Professional Delivery Success Email Template
+            // 🧠 USES INTELLIGENT FRONTEND_URL
+            const successEmailHtml = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                <div style="background-color: #10b981; padding: 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Package Delivered</h1>
+                </div>
+                <div style="padding: 30px 20px; color: #374151; text-align: center;">
+                    <div style="font-size: 48px; color: #10b981; margin-bottom: 10px;">
+                        &#10004;
+                    </div>
+                    <p style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Your order has been delivered successfully!</p>
+                    
+                    <p style="font-size: 15px; color: #6b7280; margin-bottom: 30px;">
+                        Order <strong>#${order.orderId}</strong> was handed over on ${new Date().toLocaleDateString('en-IN', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}.
+                    </p>
+                    
+                    <div style="text-align: left; background-color: #f9fafb; padding: 20px; border-radius: 8px;">
+                        <p style="margin: 0 0 10px 0; font-weight: bold; font-size: 14px; text-transform: uppercase; color: #9ca3af;">What's Next?</p>
+                        <p style="margin: 0 0 5px 0; font-size: 14px;">&bull; View your invoice in the 'Delivered' section.</p>
+                        <p style="margin: 0; font-size: 14px;">&bull; Leave a review to help other customers.</p>
+                    </div>
+
+                    <a href="${FRONTEND_URL}/delivered.html" style="display: inline-block; margin-top: 30px; background-color: #1f2937; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 6px; font-weight: 500;">View Order Details</a>
+                </div>
+                <div style="background-color: #f9fafb; padding: 15px; text-align: center; border-top: 1px solid #e5e7eb;">
+                    <p style="margin: 0; font-size: 12px; color: #9ca3af;">Thank you for shopping with NexusMarket.</p>
+                </div>
+            </div>`;
 
             try {
                 await transporter.sendMail({
                     from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
                     to: order.confirmationEmail,
-                    subject: `Delivered: Order #${order.orderId}`,
-                    html: `<div style="font-family: Arial;"><h1>✅ Delivered!</h1><p>You earned <b>${pointsEarnedThisOrder}</b> Reward Points!</p></div>`
+                    subject: `Delivered: Your Order #${order.orderId} has arrived`,
+                    html: successEmailHtml
                 });
-            } catch (e) { console.error(e); }
+                console.log(`📧 Success Email sent for Order #${order.orderId}`);
+            } catch (e) { console.error("Error sending Success email:", e); }
         }
     }
 
+    // Save history to DB
     if (itemsToAddToDelivered.length > 0) {
         if (!user.deliveredItems) user.deliveredItems = [];
         user.deliveredItems.unshift(...itemsToAddToDelivered);
@@ -321,30 +304,6 @@ async function processOrderStatusUpdates(user) {
     }
 
     return { user, requiresDbUpdate };
-}
-
-// --- Helper: Recalculate Points based on UNIT PRICE ---
-function calculatePointsFromHistory(deliveredItems) {
-    if (!deliveredItems || deliveredItems.length === 0) return 0;
-    
-    let totalPoints = 0;
-    
-    deliveredItems.forEach(item => {
-        const finalPrice = item.pricePaid !== undefined ? item.pricePaid : item.price;
-        const quantity = item.quantity || 1;
-        let pointsPerItem = 0;
-
-        if (finalPrice > 100000) pointsPerItem = 50;
-        else if (finalPrice > 50000) pointsPerItem = 40;
-        else if (finalPrice > 25000) pointsPerItem = 25;
-        else if (finalPrice > 10000) pointsPerItem = 15;
-        else if (finalPrice > 5000) pointsPerItem = 5;
-        else pointsPerItem = 2;
-
-        totalPoints += (pointsPerItem * quantity);
-    });
-    
-    return totalPoints;
 }
 
 // --- Scheduled Tasks ---
@@ -373,6 +332,24 @@ function startScheduledTasks() {
             console.error("❌ Error during scheduled task:", error);
         }
     }, { scheduled: true, timezone: "Asia/Kolkata" });
+}
+
+async function connectToDbAndStartServer() {
+    try {
+        await client.connect();
+        const database = client.db("nexusMarketDB");
+        usersCollection = database.collection("users");
+        console.log("✅ Successfully connected to MongoDB Atlas.");
+
+        app.listen(PORT, () => {
+            console.log(`🚀 Server is running on Port ${PORT}`);
+        });
+        
+        startScheduledTasks();
+    } catch (error) {
+        console.error("❌ Could not connect to MongoDB", error);
+        process.exit(1);
+    }
 }
 
 
@@ -445,7 +422,8 @@ app.post('/signup', async (req, res) => {
         await usersCollection.insertOne(newUser);
 
         try {
-            const welcomeEmailHtml = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 8px; text-align: center; color: #333;"><h1 style="color: #4f46e5;">🎉 Welcome to NexusMarket, ${name}!</h1><p style="font-size: 16px;">Your account has been successfully created. We're thrilled to have you join our community.</p><p style="font-size: 16px;">You can now sign in using your credentials and start exploring thousands of products.</p></div>`;
+            // 🧠 USES INTELLIGENT FRONTEND_URL
+            const welcomeEmailHtml = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 8px; text-align: center; color: #333;"><h1 style="color: #4f46e5;">🎉 Welcome to NexusMarket, ${name}!</h1><p style="font-size: 16px;">Your account has been successfully created. We're thrilled to have you join our community.</p><p style="font-size: 16px;">You can now sign in using your credentials and start exploring thousands of products.</p><div style="margin: 30px 0;"><a href="${FRONTEND_URL}/signin.html" style="background-color: #6b21a8; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Start Shopping Now</a></div></div>`;
             
             await transporter.sendMail({
                 from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
@@ -631,29 +609,6 @@ app.get('/api/user/data', async (req, res) => {
     }
 });
 
-// Endpoint to upload/update profile image
-app.put('/api/user/profile-image', async (req, res) => {
-    const phone = getPhone(req);
-    const { image } = req.body;
-
-    if (!phone) return res.status(401).json({ message: 'Not authenticated' });
-    
-    // Safety check: MongoDB documents have a 16MB limit. 
-    // We limit the payload here to ensure we don't crash the DB entry.
-    if (!image) return res.status(400).json({ message: 'No image data provided.' });
-
-    try {
-        await usersCollection.updateOne(
-            { phone }, 
-            { $set: { profileImage: image } } 
-        );
-        res.json({ success: true, message: 'Profile image updated successfully' });
-    } catch (error) {
-        console.error("Error updating profile image:", error);
-        res.status(500).json({ message: 'Server error updating profile image' });
-    }
-});
-
 app.post('/api/user/wishlist', async (req, res) => {
     const phone = getPhone(req);
     const { product } = req.body;
@@ -669,9 +624,7 @@ app.post('/api/user/wishlist', async (req, res) => {
             
         await usersCollection.updateOne({ phone }, updateOperation);
         
-        // --- TRIGGER JS RECOMMENDER ---
-        generateAndSaveRecommendations(phone);
-        
+        runRecommender(phone);
         res.json({ success: true, message: 'Wishlist updated' });
     } catch (error) {
         res.status(500).json({ message: 'Server error updating wishlist' });
@@ -692,9 +645,7 @@ app.post('/api/user/cart', async (req, res) => {
             await usersCollection.updateOne({ phone }, { $push: { cart: product } });
         }
         
-        // --- TRIGGER JS RECOMMENDER ---
-        generateAndSaveRecommendations(phone);
-
+        runRecommender(phone);
         res.json({ success: true, message: 'Cart updated' });
     } catch (error) {
         res.status(500).json({ message: 'Server error updating cart' });
@@ -708,8 +659,7 @@ app.put('/api/user/cart/quantity', async (req, res) => {
     try {
         if (newQuantity < 1) {
             await usersCollection.updateOne({ phone }, { $pull: { cart: { name: productName } } });
-            // Item removed, so update recommendations
-            generateAndSaveRecommendations(phone);
+            runRecommender(phone);
         } else {
             await usersCollection.updateOne({ phone, "cart.name": productName }, { $set: { "cart.$.quantity": newQuantity } });
         }
@@ -725,8 +675,7 @@ app.delete('/api/user/cart/remove', async (req, res) => {
     if (!phone) return res.status(401).json({ message: 'Not authenticated' });
     try {
         await usersCollection.updateOne({ phone }, { $pull: { cart: { name: productName } } });
-        // Item removed, so update recommendations
-        generateAndSaveRecommendations(phone);
+        runRecommender(phone);
         res.json({ success: true, message: 'Item removed from cart' });
     } catch (error) {
         res.status(500).json({ message: 'Server error removing item' });
@@ -804,23 +753,6 @@ app.post('/api/user/orders', async (req, res) => {
     } catch (error) {
         console.error("Server error creating order:", error);
         res.status(500).json({ message: 'Server error creating order' });
-    }
-});
-
-// Endpoint to DELETE profile image
-app.delete('/api/user/profile-image', async (req, res) => {
-    const phone = getPhone(req);
-    if (!phone) return res.status(401).json({ message: 'Not authenticated' });
-
-    try {
-        await usersCollection.updateOne(
-            { phone }, 
-            { $unset: { profileImage: "" } } 
-        );
-        res.json({ success: true, message: 'Profile image removed' });
-    } catch (error) {
-        console.error("Error removing profile image:", error);
-        res.status(500).json({ message: 'Server error removing image' });
     }
 });
 
@@ -1015,10 +947,6 @@ app.post('/api/user/viewed', async (req, res) => {
             } 
         });
         
-        // --- NOTE: We generally avoid running the heavy recommender on every single view for performance, 
-        // --- but since we removed Python, we can safely run it if you want, or just leave it for cart/wishlist actions.
-        // --- I'll leave it out here to keep it snappy as requested previously.
-        
         res.json({ success: true, message: 'Viewed item updated.' });
     } catch (error) {
         console.error("Error updating viewed items:", error);
@@ -1146,9 +1074,7 @@ app.put('/api/user/cart/offer', async (req, res) => {
             return res.status(404).json({ message: 'Product not found in cart.' });
         }
         
-        // --- TRIGGER JS RECOMMENDER ---
-        generateAndSaveRecommendations(phone);
-        
+        runRecommender(phone);
         res.json({ success: true, message: 'Offer updated successfully.' });
     } catch (error) {
         console.error("Error updating cart offer:", error);
@@ -1170,6 +1096,7 @@ app.post('/api/user/review', async (req, res) => {
     }
 
     try {
+        // 1. Find the user and the specific item they are reviewing
         const user = await usersCollection.findOne({ phone });
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
@@ -1181,26 +1108,29 @@ app.post('/api/user/review', async (req, res) => {
             return res.status(404).json({ message: 'Delivered item not found.' });
         }
 
+        // 2. Check if this item instance has already been reviewed
         if (itemToReview.reviewed) {
             return res.status(400).json({ message: 'You have already reviewed this item.' });
         }
 
+        // 3. Create the new review object
         const newReview = {
             _id: new ObjectId(),
-            itemId: new ObjectId(itemId),
+            itemId: new ObjectId(itemId), // Reference to the deliveredItems _id
             productName: productName,
             category: category,
             overallRating: overallRating,
             reviewText: reviewText,
-            subRatings: subRatings || {},
+            subRatings: subRatings || {}, // Store sub-ratings (or empty object)
             date: new Date().toISOString()
         };
 
+        // 4. Atomically update the user document
         const updateResult = await usersCollection.updateOne(
             { phone, "deliveredItems._id": new ObjectId(itemId) },
             {
-                $push: { reviews: newReview },
-                $set: { "deliveredItems.$.reviewed": true }
+                $push: { reviews: newReview },         // Add new review to the reviews array
+                $set: { "deliveredItems.$.reviewed": true } // Mark the item as reviewed
             }
         );
 
@@ -1254,6 +1184,38 @@ app.post('/api/user/contact-support', async (req, res) => {
     }
 });
 
+// Endpoint to DELETE profile image
+app.delete('/api/user/profile-image', async (req, res) => {
+    const phone = getPhone(req);
+    if (!phone) return res.status(401).json({ message: 'Not authenticated' });
 
-// -- 5. START SERVER --
+    try {
+        await usersCollection.updateOne(
+            { phone }, 
+            { $unset: { profileImage: "" } } // This removes the field completely
+        );
+        res.json({ success: true, message: 'Profile image removed' });
+    } catch (error) {
+        console.error("Error removing profile image:", error);
+        res.status(500).json({ message: 'Server error removing image' });
+    }
+});
+
+// Endpoint to UPDATE profile image
+app.put('/api/user/profile-image', async (req, res) => {
+    const phone = getPhone(req);
+    if (!phone) return res.status(401).json({ message: 'Not authenticated' });
+    try {
+        await usersCollection.updateOne(
+            { phone },
+            { $set: { profileImage: req.body.image } }
+        );
+        res.json({ success: true, message: 'Image updated' });
+    } catch (error) {
+        console.error("Error updating profile image:", error);
+        res.status(500).json({ message: 'Error updating image' });
+    }
+});
+
+// --- 5. START SERVER ---
 connectToDbAndStartServer();

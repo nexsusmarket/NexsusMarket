@@ -8,25 +8,31 @@ import random
 from pymongo import MongoClient
 
 # --- 1. CONNECT TO MONGODB ---
-# Read the URI from command line arguments
+
+# Server.js passes arguments in this order:
+# 0: script_name, 1: phone, 2: products_json_path, 3: mongo_uri
+
 if len(sys.argv) > 3:
     MONGO_URI = sys.argv[3]
 else:
+    # Fallback to local if running manually without arguments
     MONGO_URI = "mongodb://localhost:27017/nexusMarketDB"
 
 try:
-    # 5 second timeout to fail fast if connection is bad
+    # Set a timeout so it fails fast if the connection is bad (5 seconds)
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
     
     # Force a connection check
     client.admin.command('ping')
     
-    # --- FIX IS HERE: Explicitly select the database name ---
-    # We do not rely on get_database() without arguments anymore.
-    db = client['nexusMarketDB'] 
+    # --- CRITICAL: Connect to the specific Database 'nexusMarketDB' ---
+    # MongoDB Atlas connection strings often point to 'admin' by default.
+    # We must explicitly select your database name here.
+    db = client['nexusMarketDB']
     
     users_collection = db.users
-    # print(f"Connected to MongoDB Atlas: {db.name}") 
+    # print(f"Connected to Database: {db.name}")
+
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}", file=sys.stderr)
     sys.exit(1)
@@ -81,6 +87,7 @@ def get_tiered_recommendations(user, all_products_flat):
     cart_items = user.get('cart', [])
     wishlist_items = user.get('wishlist', [])
     
+    # Weight interactions: recent ones first
     chronological_interactions = viewed_items + cart_items[::-1] + wishlist_items[::-1]
 
     if not chronological_interactions:
@@ -118,10 +125,14 @@ def get_tiered_recommendations(user, all_products_flat):
             max_score = 0
             for trigger_item in interacted_items_in_cat:
                 score = 0
+                # 1. Brand Match
                 if get_brand(product.get('name')) == get_brand(trigger_item.get('name')):
                     score += 0.5
+                
+                # 2. Name Similarity
                 score += calculate_name_similarity(product.get('name'), trigger_item.get('name')) * 0.5
                 
+                # 3. Category Specific Logic
                 if category in ['laptop', 'mobile']:
                     try:
                         trigger_price = float(trigger_item.get('price', 0))
@@ -151,8 +162,9 @@ def get_tiered_recommendations(user, all_products_flat):
 
 # --- 4. MAIN EXECUTION BLOCK ---
 if __name__ == "__main__":
+    # Ensure we have enough arguments
     if len(sys.argv) < 3:
-        print("Usage: python recommender.py <phone> <products_file> <mongo_uri>", file=sys.stderr)
+        print("Usage: python recommender.py <phone> <products_file> [mongo_uri]", file=sys.stderr)
         sys.exit(1)
 
     phone = sys.argv[1]
@@ -169,11 +181,14 @@ if __name__ == "__main__":
         print(f"Error: '{products_filename}' is not valid JSON.", file=sys.stderr)
         sys.exit(1)
 
+    # Find the user in the database
     user = users_collection.find_one({"phone": phone})
     
     if user:
+        # Generate Recommendations
         new_recommendations = get_tiered_recommendations(user, all_products_flat)
 
+        # Mix in recently interacted items for immediate relevance
         viewed_items = user.get('viewedItems', [])
         cart_items = user.get('cart', [])
         wishlist_items = user.get('wishlist', [])
@@ -187,8 +202,10 @@ if __name__ == "__main__":
                 user_interacted_items.append(item)
                 seen_names.add(item['name'])
 
+        # Combine and limit to 100 items
         final_recs = (user_interacted_items + new_recommendations)[:100]
         
+        # SAVE TO ATLAS
         result = users_collection.update_one(
             {"phone": phone}, 
             {"$set": {"recommendations": final_recs}}

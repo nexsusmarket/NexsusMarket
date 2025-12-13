@@ -1,57 +1,12 @@
-import { fetchUserData, addToCart } from './apiService.js';
+// javascript/delivered.js
 
-// --- API FUNCTIONS (FIX: Updated to use live backend URL) ---
-const API_BASE_URL = 'https://nexus-backend.onrender.com';
-
-async function requestReturnOtp(itemId, reason) {
-    const response = await fetch(`${API_BASE_URL}/api/user/returns/request-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-phone': localStorage.getItem('userAuthToken') },
-        body: JSON.stringify({ itemId, reason })
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to request OTP.');
-    }
-    return response.json();
-}
-
-async function finalizeReturn(itemId, otp) {
-    const response = await fetch(`${API_BASE_URL}/api/user/returns/finalize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-phone': localStorage.getItem('userAuthToken') },
-        body: JSON.stringify({ itemId, otp })
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to finalize return.');
-    }
-    return response.json();
-}
-
-async function fetchOrderDetails(orderId) {
-    const response = await fetch(`${API_BASE_URL}/api/user/order/${orderId}`, {
-        headers: { 'x-phone': localStorage.getItem('userAuthToken') }
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch order details.');
-    }
-    return response.json();
-}
-
-async function submitReview(reviewData) {
-    const response = await fetch(`${API_BASE_URL}/api/user/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-phone': localStorage.getItem('userAuthToken') },
-        body: JSON.stringify(reviewData)
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to submit review.');
-    }
-    return response.json();
-}
+import { 
+    fetchUserData, 
+    requestReturnOtp, 
+    finalizeReturn, 
+    fetchOrderDetails, 
+    submitReview 
+} from './apiService.js';
 
 // --- HELPER FUNCTIONS ---
 const groupItemsByMonth = (items) => {
@@ -356,7 +311,7 @@ function generateInvoice(order) {
 
         <div class="footer">
             <p>This is a computer-generated invoice. No signature required.</p>
-            <p>Need help? Contact nexsusmarketshop@gmail.com</p>
+            <p>Need help? Contact support@nexusmarket.com</p>
         </div>
 
         <script>
