@@ -42,7 +42,7 @@ const client = new MongoClient(uri);
 // --- NODEMAILER TRANSPORTER (BREVO) ---
 const transporter = nodemailer.createTransport({
     host: 'smtp-relay.brevo.com',
-    port: process.env.EMAIL_PORT || 2525,
+    port:2525,
     secure: false, // false for 587
     auth: {
         user: process.env.EMAIL_USER,
