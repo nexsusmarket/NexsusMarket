@@ -39,29 +39,16 @@ const uri = process.env.MONGO_URI;
 let usersCollection;
 const client = new MongoClient(uri);
 
+// --- NODEMAILER TRANSPORTER (BREVO) ---
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT),
-    secure: false, // MUST be false for 587
+    host: 'smtp-relay.brevo.com',
+    port: process.env.EMAIL_PORT || 2525,
+    secure: false, // false for 587
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
-    tls: {
-        rejectUnauthorized: false
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
 });
-transporter.verify((error, success) => {
-    if (error) {
-        console.error("❌ SMTP CONFIG ERROR:", error);
-    } else {
-        console.log("✅ SMTP Server is ready to send emails");
-    }
-});
-
 // --- HELPER FUNCTIONS ---
 
 // Function to run the Python Recommender Script
