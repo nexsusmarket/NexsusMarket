@@ -1,23 +1,28 @@
 // server.js
 
+// --- 1. IMPORTS (MUST BE AT THE VERY TOP) ---
+require('dotenv').config();
+const express = require('express'); // <--- THIS MUST BE HERE
+const cors = require('cors');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
-const app = express(); // ✅ Step 1: Create the app first
-
-app.use(cors());
-// --- 1. IMPORTS ---
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 
-// --- 2. APP INITIALIZATION & CONFIGURATION ---
+// --- 2. INITIALIZE APP (MUST BE AFTER IMPORTS) ---
+const app = express(); // <--- Now this works because express is imported above!
+
+// --- 3. MIDDLEWARE ---
+app.use(cors());
+app.use(express.json());
+
+// --- 4. CONFIGURATION ---
 const PORT = process.env.PORT || 3000;
 
+// ... (Keep the rest of your code below this line) ...
 // 🧠 INTELLIGENT CONFIGURATION FOR EMAIL LINKS
 // If you are deploying, set 'FRONTEND_URL' in your Cloud Environment Variables.
 // If you are developing locally, you don't need to set it; it defaults to VS Code Live Server.
@@ -27,9 +32,7 @@ console.log(`📧 Email Links will point to: ${FRONTEND_URL}`);
 
 const otpStore = {}; // In-memory store for signup OTPs
 
-// Allow any origin (Localhost or Production) to access the API
-app.use(cors());
-app.use(express.json());
+
 
 // --- 3. MONGODB CONNECTION SETUP ---
 const uri = process.env.MONGO_URI;
