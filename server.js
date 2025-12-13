@@ -3,7 +3,7 @@
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
-
+app.use(cors());
 // --- 1. IMPORTS ---
 require('dotenv').config();
 const express = require('express');
