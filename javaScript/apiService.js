@@ -10,8 +10,7 @@ import { productLookupMap } from './productData.js';
 // 1. Define your Local and Live Backend URLs
 const LOCAL_BACKEND_URL = 'http://localhost:3000';
 // 👇 REPLACE THIS with your actual Render URL after deploying backend
-const LIVE_BACKEND_URL = 'https://your-app-name.onrender.com'; 
-
+const LIVE_BACKEND_URL = 'https://nexsusmarket.onrender.com';
 let CURRENT_BACKEND_URL = '';
 
 // 2. The Logic: Check where the website is running
