@@ -39,18 +39,15 @@ const uri = process.env.MONGO_URI;
 let usersCollection;
 const client = new MongoClient(uri);
 
-// --- NODEMAILER TRANSPORTER ---
+// --- NODEMAILER TRANSPORTER (BREVO) ---
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Use SSL
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false, // false for 587
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
-    family: 4, // ⚠️ CRITICAL FIX: Force IPv4 to prevent timeouts
-    logger: true, // Keep these for debugging if needed
-    debug: true
 });
 // --- HELPER FUNCTIONS ---
 
