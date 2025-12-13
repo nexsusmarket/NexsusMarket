@@ -41,13 +41,16 @@ const client = new MongoClient(uri);
 
 // --- NODEMAILER TRANSPORTER ---
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',  // Force Gmail Host
-    port: 465,               // Force Secure Port
-    secure: true,            // ⚠️ MUST be true for Port 465
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Use SSL
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    family: 4, // ⚠️ CRITICAL FIX: Force IPv4 to prevent timeouts
+    logger: true, // Keep these for debugging if needed
+    debug: true
 });
 // --- HELPER FUNCTIONS ---
 
