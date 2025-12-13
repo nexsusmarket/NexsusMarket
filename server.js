@@ -3,6 +3,8 @@
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const app = express(); // ✅ Step 1: Create the app first
+
 app.use(cors());
 // --- 1. IMPORTS ---
 require('dotenv').config();
@@ -14,7 +16,6 @@ const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 
 // --- 2. APP INITIALIZATION & CONFIGURATION ---
-const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 🧠 INTELLIGENT CONFIGURATION FOR EMAIL LINKS
