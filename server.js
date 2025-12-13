@@ -41,9 +41,7 @@ const client = new MongoClient(uri);
 
 // --- NODEMAILER TRANSPORTER ---
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false,
+    service: 'gmail', // Built-in service ensures correct settings automatically
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
