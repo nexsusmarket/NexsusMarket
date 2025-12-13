@@ -40,18 +40,15 @@ let usersCollection;
 const client = new MongoClient(uri);
 
 // --- NODEMAILER TRANSPORTER ---
-// --- NODEMAILER TRANSPORTER ---
-// --- NODEMAILER TRANSPORTER ---
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST, // Reads 'smtp.gmail.com' from .env
-    port: process.env.EMAIL_PORT, // Reads '465' from .env
-    secure: true,                 // ⚠️ MUST be true for Port 465
+    host: 'smtp.gmail.com',  // Force Gmail Host
+    port: 465,               // Force Secure Port
+    secure: true,            // ⚠️ MUST be true for Port 465
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
 });
-
 // --- HELPER FUNCTIONS ---
 
 // Function to run the Python Recommender Script
