@@ -1,5 +1,4 @@
 import { fetchUserData, cancelOrder } from './apiService.js';
-app.use(cors());
 document.addEventListener('DOMContentLoaded', async () => {
     if (!localStorage.getItem('userAuthToken')) {
         document.getElementById('orders-container').innerHTML = `
