@@ -1,0 +1,19 @@
+# --- Dependencies ---
+node_modules/
+package-lock.json
+
+# --- Environment Variables (CRITICAL) ---
+.env
+
+# --- System Files ---
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Docker ---
+# (Optional, but good since you are using Docker)
+Dockerfile

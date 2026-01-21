@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Cart - NexusMarket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/ass.css">
+</head>
+<body class="cart-body">
+
+    <header class="gradient-bg text-white shadow-lg sticky-header">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <a href="index.html" class="text-2xl font-bold flex items-center space-x-2">
+                    <i class="fas fa-atom logo-spin"></i><span>NexusMarket</span>
+                </a>
+                <nav id="main-navigation" class="flex items-center space-x-6"></nav>
+            </div>
+        </div>
+    </header>
+    
+    <div class="delivery-bar">
+        <div>
+            <span class="text-gray-600">Deliver to:</span>
+            <span id="delivery-location" class="font-bold text-gray-800 ml-2"></span>
+        </div>
+        <a href="address.html" class="border border-gray-300 px-4 py-1 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+            Change
+        </a>
+    </div>
+
+    <main class="cart-container">
+        <header class="cart-header">
+            <h1 class="cart-title">Your Cart</h1>
+        </header>
+        <div class="cart-layout-grid">
+            <section class="cart-items-section"></section>
+            <aside class="cart-summary">
+                <h2 class="cart-summary-title">Order Summary</h2>
+                <div class="cart-summary-line">
+                    <span>Items</span>
+                    <span id="cart-item-count">0</span>
+                </div>
+                <div class="cart-summary-line">
+                    <span>Subtotal</span>
+                    <span id="cart-subtotal">₹0.00</span>
+                </div>
+                <div class="cart-summary-line">
+                    <span id="shipping-label">Shipping</span>
+                    <span id="cart-shipping">₹0.00</span>
+                </div>
+                <hr class="cart-summary-divider">
+                <div class="cart-summary-total">
+                    <span>Total</span>
+                    <span id="cart-total">₹0.00</span>
+                </div>
+                <button class="cart-checkout-button">Proceed to Checkout</button>
+                <a href="explore.html" onclick="sessionStorage.setItem('isAddMoreMode', 'true')" class="cart-continue-link">Add more</a>
+            </aside>
+        </div>
+    </main>
+
+    <div id="student-email-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Enter Student Email for Discount</h2>
+                <button id="student-email-modal-close-btn" class="close-button">&times;</button>
+            </div>
+            <form id="student-email-form" class="modal-body">
+                <p class="text-sm text-gray-600 mb-4">Enter your college email to get a 10% discount on this item.</p>
+                <input type="email" id="student-email-input" placeholder="College Mail" required class="w-full p-2 border rounded-md">
+                <p id="student-email-error" class="text-red-600 text-sm mt-1 mb-3 hidden"></p>
+                <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700">Get Verification Code</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="verification-code-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Enter Verification Code</h2>
+                <button id="verification-code-modal-close-btn" class="close-button">&times;</button>
+            </div>
+            <form id="verification-code-form" class="modal-body">
+                <p class="text-sm text-gray-600 mb-4">Check your email for the 6-digit code we sent you.</p>
+                <input type="text" id="verification-code-input" placeholder="123456" required maxlength="6" class="w-full p-2 border rounded-md mb-4 text-center text-lg tracking-[5px]">
+                <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700">Verify and Apply Discount</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="account-number-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Enter Card Details</h2>
+                <button id="account-number-modal-close-btn" class="close-button">&times;</button>
+            </div>
+            <form id="account-number-form" class="modal-body">
+                <p class="text-sm text-gray-600 mb-4">Please enter your card number and CVV to apply this offer.</p>
+                <div class="space-y-4">
+                    <input type="text" id="account-number-input" placeholder="16-Digit Card Number" required maxlength="16" class="w-full p-2 border rounded-md">
+                    <input type="text" id="cvv-input" placeholder="3-Digit CVV" required maxlength="3" class="w-full p-2 border rounded-md">
+                </div>
+                <p id="account-number-error" class="text-red-600 text-sm mt-2 mb-3 hidden"></p>
+                <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 mt-4">Apply Offer</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="toast-notification" class="toast-hidden">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script type="module" src="javascript/auth.js"></script>
+    <script type="module" src="javascript/cart.js"></script>
+</body>
+</html>

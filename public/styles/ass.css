@@ -1,0 +1,1994 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+}
+
+.logo-spin {
+    display: inline-block; /* Ensures the element can be transformed */
+    animation: rotate 5s linear infinite; /* 5s = speed (lower is faster), linear = smooth speed */
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+.domain-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.product-card {
+  position: relative;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+
+
+.Tre-product-card {
+  position: relative;
+  width: 200px;          /* 👈 set fixed width */
+  height: 200px;         /* 👈 same as width → perfect circle */
+  border-radius: 50%;    /* 👈 makes it a circle */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  overflow: hidden;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.Tre-product-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, #ff00c3, #00ffe0, #ff00c3);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+  z-index: -1;
+}
+
+.Tre-product-card:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 0 0 20px #00ffe0, 0 0 40px #ff00c3;
+}
+
+
+
+.nav-link:hover {
+  color: #4f46e5;
+}
+
+.search-bar:focus {
+  outline: 2px solid #4f46e5;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+.Top-deals{
+  height: 40px;
+  width: 40px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 50%;
+}
+.cotaions{
+  text-decoration: underline;
+}
+.macbook{
+  height: 500px;
+  width: 500px;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+}
+@media (max-width: 2000px) {
+  .products-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+@media (max-width: 1600px) {
+  .products-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 1300px) {
+  .products-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 1000px) {
+  .products-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 575px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 450px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 50; /* Ensures the header stays on top of other content */
+    width: 100%;
+}
+
+.product-container {
+  padding-top: 40px;
+  padding-bottom: 20px;
+  padding-left: 25px;
+  padding-right: 25px;
+
+  border-right: 1px solid rgb(231, 231, 231);
+  border-bottom: 1px solid rgb(231, 231, 231);
+
+  display: flex;
+  flex-direction: column;
+}
+.related-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+    width: 100%;
+}
+
+.product-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  height: 150px;
+  margin-bottom: 20px;
+}
+.product-image {
+  max-width: 100%;
+  max-height: 100%;
+  cursor: pointer;
+}
+.product-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.4;
+  max-height: 2.8rem; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; 
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+
+.product-price {
+  font-weight: 600;
+  font-size: 15px;
+  color: #2c3e50; /* Deep slate blue-gray */
+  background: #f4f4f4;
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-top: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+
+.add-to-cart-button {
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: linear-gradient(135deg, #cb1111, #2575fc); /* Violet to Blue */
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.add-to-cart-button:hover {
+  background: linear-gradient(135deg, #2575fc, #cb1111);
+  transform: translateY(-1px);
+}
+
+a {
+  text-decoration: none;
+}
+.product-details-image {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 25%; 
+}
+.recom-image {
+  width: 100%;
+  max-height: 160px;
+  object-fit: contain; 
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  display: block;
+}
+.domain-card {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+.card-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recom-header {
+  position: relative; 
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #3b82f6, #7c3aed);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(60, 60, 180, 0.25);
+  color: #fff;
+  margin-bottom: 1rem;
+  height: 70px; 
+}
+
+.recom-header h2 {
+  position: absolute;
+  left: 15%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size:30px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none; 
+}
+
+.remove {
+  position: relative;
+  background: linear-gradient(135deg, #ff4d4d, #c20b0b);
+  padding: 8px 16px;
+  border-radius: 40px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 12px rgba(255, 77, 77, 0.6);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin-left: 1140px;
+}
+
+.remove::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
+  transform: skewX(-25deg);
+  transition: left 0.5s ease;
+}
+
+.remove:hover::before {
+  left: 100%;
+}
+
+.remove:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 18px rgba(255, 77, 77, 0.8);
+}
+
+.remove:active {
+  transform: scale(0.95);
+  background: linear-gradient(135deg, #a9ff00, #67c200);
+  box-shadow: inset 0 3px 6px rgba(0,0,0,0.3);
+}
+
+.see-all-link {
+  background: linear-gradient(135deg, #ff4d4d, #c20b0b);
+  padding: 6px 14px;
+  cursor: pointer;
+  border-radius: 50px;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 0 12px rgba(255, 77, 77, 0.6);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+  display: inline-block;
+}
+
+.see-all-link {
+  background: linear-gradient(135deg, #ff4d4d, #c20b0b);
+  padding: 6px 14px;
+  cursor: pointer;
+  border-radius: 50px;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 0 12px rgba(255, 77, 77, 0.6);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+  display: inline-block;
+  border: none;
+}
+
+.see-all-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
+}
+
+.see-all-link:hover::before {
+  left: 100%;
+}
+
+.see-all-link:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 18px rgba(255, 77, 77, 0.8);
+}
+
+.see-all-link:active {
+  transform: scale(0.95);
+  background: linear-gradient(135deg, #a9ff00, #67c200);
+  box-shadow: inset 0 3px 6px rgba(0,0,0,0.3);
+}
+
+.section-trend{
+  background-color: #d0d2f2;
+}
+
+/* 2. The Brand Card - This now becomes the main container for its own lights. */
+.nexus-brand-card {
+    position: relative; /* Establishes a positioning context for the lights inside it. */
+    overflow: hidden;   /* CRUCIAL: Contains the glow within the card's boundaries. */
+    border-radius: 0.75rem; /* 12px */
+    z-index: 1;
+}
+
+/* 3. The Content Layer - This sits on top of the lights and creates the glass effect. */
+/* Replace it with this */
+.card-content-layer {
+    background-color: rgba(255, 255, 255, 0.05); /* VERY transparent white glass */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Slightly brighter border */
+    border-radius: inherit; 
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    transition: background-color 0.3s ease;
+}
+
+.nexus-brand-card:hover .card-content-layer {
+    background-color: rgba(255, 255, 255, 0.1); /* Becomes slightly more visible on hover */
+}
+
+.brand-card-gradient {
+    /* This is the key: We layer four radial gradients, one for each corner */
+    background: 
+        /* Bottom-right (Purple) */
+        radial-gradient(circle at 100% 100%, hsla(270, 70%, 50%, 0.5), transparent 50%),
+        /* Bottom-left (Green) */
+        radial-gradient(circle at 0% 100%, hsla(120, 70%, 50%, 0.5), transparent 50%),
+        /* Top-right (Yellow) */
+        radial-gradient(circle at 100% 0%, hsla(60, 80%, 60%, 0.6), transparent 50%),
+        /* Top-left (Cyan) */
+        radial-gradient(circle at 0% 0%, hsla(180, 70%, 50%, 0.5), transparent 50%),
+        /* Base color for the card */
+        hsl(220, 15%, 95%);
+    
+    border-radius: 0.75rem; /* 12px */
+    transition: transform 0.2s ease-in-out;
+    cursor: pointer;
+
+    /* These are for centering the logo inside */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 10rem; /* 160px, matches h-40 */
+}
+
+.brand-card-gradient:hover {
+    transform: translateY(-5px); /* Simple hover effect */
+}
+
+
+
+.sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+
+/* ================================================================
+  Professional Hover Effect for Brand Cards
+================================================================
+*/
+
+/* 1. CSS Custom Property Registration */
+/* This allows the '--angle' property to be animated smoothly. */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* 2. Keyframe Animation */
+/* This animation handles both the rotation and the color shifting. */
+@keyframes holographic-glow {
+  from {
+    --angle: 0deg;
+    filter: hue-rotate(0deg);
+  }
+  to {
+    --angle: 360deg;
+    filter: hue-rotate(360deg);
+  }
+}
+
+/* 4. The main card light element - now focuses on the color and spread. */
+.card-light {
+    position: absolute;
+    width: 150px; /* Larger to allow more spread */
+    height: 150px;
+    border-radius: 50%;
+    
+    /* Radial gradient for the color spread */
+    background: radial-gradient(circle at center, var(--light-color-bright) 0%, var(--light-color) 30%, transparent 80%);
+    
+    filter: blur(45px); /* Moderate blur for a glowing halo */
+    opacity: 0.9;
+    z-index: 1; /* Sits behind the content layer */
+    pointer-events: none; /* Ensures lights don't interfere with hover effects on the card */
+}
+
+/* 5. The "LED Bulb" hot-spot created with a pseudo-element. */
+.card-light::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centered within its parent .card-light */
+
+    width: 6px; /* A smaller, intense core */
+    height: 6px;
+    background: white; /* Bright white core */
+    border-radius: 50%;
+    
+    /* Intense box-shadow for the "ray" effect */
+    box-shadow: 
+        0 0 5px white,      /* Core brightness */
+        0 0 15px white,     /* Strong immediate halo */
+        0 0 30px var(--light-color), /* Primary color glow */
+        0 0 60px var(--light-color-light); /* Wider, softer color spread */
+    
+    z-index: 2; /* Ensures this hot spot is above the main glow */
+}
+
+/* 6. Positioning for the lights and DEFINING THE COLORS for each corner. */
+/* Using two color variables for more control over the gradient and shadows. */
+.card-light.top-left {
+    top: -75px; /* Half of width/height for corner placement */
+    left: -75px;
+    --light-color-bright: #33ffff; /* Brighter Cyan for inner glow */
+    --light-color: #00cccc;     /* Standard Cyan for outer glow */
+    --light-color-light: #66ffff; /* Lighter Cyan for wider shadow */
+}
+.card-light.top-right {
+    top: -75px;
+    right: -75px;
+    --light-color-bright: #ffff66; /* Brighter Yellow */
+    --light-color: #cccc00;
+    --light-color-light: #ffff99;
+}
+.card-light.bottom-left {
+    bottom: -75px;
+    left: -75px;
+    --light-color-bright: #66ff66; /* Brighter Green */
+    --light-color: #00cc00;
+    --light-color-light: #99ff99;
+}
+.card-light.bottom-right {
+    bottom: -75px;
+    right: -75px;
+    --light-color-bright: #ff66ff; /* Brighter Magenta */
+    --light-color: #cc00cc;
+    --light-color-light: #ff99ff;
+}
+
+.trending-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #3b82f6, #7c3aed);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(60, 60, 180, 0.2);
+  color: #fff;
+  margin-bottom: 1rem;
+  max-width: 100%;
+}
+
+.trending-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.trending-header .see-all-link {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+}
+
+.trending-section {
+  background-color: #f0f4ff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+
+.add-to-cart-button {
+  margin-top: auto; 
+}
+.icons {
+  height: 50px;
+  width: 50px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 50%;
+}
+.cyber-banner {
+    padding: 100px;
+    max-width: 1300px;
+    background: #16213e;
+    border: 2px solid #136780;
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 25px rgba(0, 194, 255, 0.5);
+    text-align: center; 
+}
+
+/* styles/detail.css */
+
+/* Main Image Zoom Effect */
+.product-main-image-wrapper {
+    overflow: hidden;
+    border-radius: 0.5rem;
+}
+
+.product-main-image {
+    transition: transform 0.3s ease-in-out;
+    width: 300px;
+    margin-left: 125px;
+}
+
+.product-main-image-wrapper:hover .product-main-image {
+    transform: scale(1.05);
+}
+
+/* Thumbnail Styles */
+.product-thumbnail {
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease, opacity 0.2s ease;
+    border-radius: 0.375rem;
+    opacity: 0.7;
+}
+
+.product-thumbnail:hover {
+    opacity: 1;
+}
+
+.thumbnail-active {
+    border-color: #8B5CF6; /* purple-500 */
+    opacity: 1;
+}
+
+/* Wishlist Icon Heart Beat Animation on Click */
+.wishlist-icon-details.favorited i {
+    animation: heart-beat 0.4s ease-in-out;
+}
+
+@keyframes heart-beat {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+
+/* Ensure fly-to-cart/wishlist icons from ass.css are available */
+/* If they are not already global, add them here too. */
+.fly-to-cart-icon, .fly-to-wishlist-icon {
+    position: fixed;
+    z-index: 1000;
+    font-size: 24px;
+    color: #8B5CF6; /* purple-500 */
+    opacity: 1;
+    transition: all 1s cubic-bezier(0.5, -0.5, 1, 0.5);
+    pointer-events: none; /* Make sure it doesn't block clicks */
+}
+
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.banner-content {
+    display: flex;
+    justify-content: center; 
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.text-content {
+    color: #ffffff;
+}
+
+.main-headline {
+    font-size: 5rem;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow:
+        0 0 5px #fff,
+        0 0 10px #fff,
+        0 0 20px #00c2ff,
+        0 0 30px #00c2ff,
+        0 0 40px #00c2ff;
+    margin: 0;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .main-headline {
+        font-size: 4rem;
+    }
+}
+
+@media (max-width: 500px) {
+    .main-headline {
+        font-size: 2.5rem;
+    }
+}
+.topDeals-body{
+  background: #16213e;      
+}
+
+.top-container {
+  padding: 1rem;
+}
+
+.top-product-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding: 0rem;
+}
+
+.top-product-card {
+  position: relative; /* Add this line to fix the icon position */
+  flex: 0 0 auto;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgb(21, 183, 183);
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.top-image {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  border-radius: 8px;
+  background-color: white;
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.top-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.top-details h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #fff;
+}
+
+.top-details p {
+  margin: 0.4rem 0;
+  color: #eee;
+}
+
+.top-product-card button {
+  background-color: #fff;
+  color: rgb(21, 183, 183);
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.top-product-card:hover {
+  transform: translateY(-3px);
+}
+.deal-price {
+  font-weight: bold;
+  color: #fff;
+  margin-right: 0.5rem;
+}
+.mrp-price {
+  text-decoration: line-through;
+  color: #eee;
+  opacity: 0.7;
+}
+.discount {
+  background-color: #ff4d4d;
+  color: white;
+  padding: 2px 6px; 
+  border-radius: 50px; 
+  font-size: 0.8rem;
+  font-weight: bold;
+  display: inline-block; 
+  width: fit-content; 
+}
+/* --- Google Font & CSS Variables --- */
+/* --- Google Font & CSS Variables --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+    --cart-primary-accent: #4f46e5; /* Indigo */
+    --cart-primary-hover: #4338ca;
+    --cart-bg: #f8fafc; /* Cool Gray 50 */
+    --cart-surface: #ffffff;
+    --cart-text-heading: #111827; /* Gray 900 */
+    --cart-text-body: #374151; /* Gray 700 */
+    --cart-text-muted: #6b7280; /* Gray 500 */
+    --cart-border-color: #e5e7eb; /* Gray 200 */
+    --cart-shadow: 0 8px 24px rgba(17, 24, 39, 0.05);
+}
+
+/* --- Base Styles --- */
+.cart-body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--cart-bg);
+    color: var(--cart-text-body);
+    margin: 0;
+}
+
+
+/* --- Layout Containers --- */
+.cart-container {
+    max-width: 1200px;
+    margin: 1rem auto;
+    padding: 1rem;
+}
+
+.cart-header {
+    margin-bottom: 2rem;
+}
+
+.cart-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--cart-text-heading);
+}
+
+.cart-layout-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+/* --- Cart Items Section --- */
+.cart-items-section {
+    background: var(--cart-surface);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--cart-shadow);
+}
+
+.cart-item-row {
+    display: grid;
+    grid-template-columns: 4fr 1.5fr 1fr auto; /* Increased the first column's proportion */
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--cart-border-color);
+}
+.cart-item-row:first-child { padding-top: 0; }
+.cart-item-row:last-child { border-bottom: none; }
+
+.cart-product-details { display: flex; align-items: center; gap: 1.5rem; }
+.cart-product-image { width: 130px; height: 130px; object-fit: contain; border-radius: 12px; }
+.cart-product-name { font-size: 1.1rem; font-weight: 600; color: var(--cart-text-heading); }
+.cart-product-sku { font-size: 0.875rem; color: var(--cart-text-muted); margin-top: 0.25rem; }
+
+/* --- Custom Quantity Selector --- */
+.cart-quantity-selector {
+    display: flex;
+    align-items: center;
+    justify-self: center;
+    background: var(--cart-bg);
+    border: 1px solid var(--cart-border-color);
+    border-radius: 50px;
+    padding: 4px;
+}
+.cart-quantity-button {
+    background-color: var(--cart-surface);
+    border: 1px solid var(--cart-border-color);
+    color: var(--cart-text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: background-color 0.2s, color 0.2s;
+}
+.cart-quantity-button:hover { background-color: var(--cart-primary-accent); color: white; border-color: var(--cart-primary-accent); }
+.cart-quantity-input {
+    width: 40px;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cart-text-heading);
+    -moz-appearance: textfield;
+}
+.cart-quantity-input::-webkit-outer-spin-button, .cart-quantity-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.cart-price-display { font-size: 1.1rem; font-weight: 600; text-align: right; color: var(--cart-text-heading); }
+
+.cart-remove-button {
+    background: transparent;
+    border: none;
+    color: var(--cart-text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: color 0.2s, background-color 0.2s;
+}
+.cart-remove-button:hover { color: #ef4444; background-color: #fee2e2; }
+
+/* --- Order Summary --- */
+.cart-summary {
+    background: var(--cart-surface);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--cart-shadow);
+    position: sticky;
+    top: 2rem;
+}
+.cart-summary-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--cart-text-heading); }
+.cart-summary-line { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+.cart-summary-divider { border: none; border-top: 1px solid var(--cart-border-color); margin: 1.5rem 0; }
+.cart-summary-total { font-size: 1.25rem; font-weight: 700; color: var(--cart-text-heading); display: flex; justify-content: space-between; }
+
+.cart-checkout-button {
+    width: 100%;
+    background-color: var(--cart-primary-accent);
+    color: #fff;
+    border: none;
+    padding: 1rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 1.5rem;
+}
+.cart-checkout-button:hover { background-color: var(--cart-primary-hover); }
+.cart-continue-link { 
+  display: block;
+  text-align: center;
+  color: var(--cart-primary-accent); 
+  text-decoration: none; 
+  font-weight: 500;
+  background-color: rgb(184, 0, 235);
+  color: #fff;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 1.5rem; }
+
+/* --- Responsive --- */
+@media (max-width: 992px) {
+    .cart-layout-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+    .cart-item-row { grid-template-columns: 1fr; gap: 1rem; text-align: center; }
+    .cart-product-details { flex-direction: column; }
+    .cart-price-display, .cart-quantity-selector { justify-self: center; }
+    .cart-remove-button { position: absolute; top: 1rem; right: 1rem; }
+    .cart-item-row { position: relative; padding: 2.5rem 0 1.5rem 0; }
+}
+/* Add to styles/ass.css */
+.delivery-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* space between "Deliver to:" and the location */
+    padding: 12px 24px;
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+}
+
+#change-location-btn {
+    margin-left: auto; /* Pushes the button to the far right */
+    padding: 4px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background-color: white;
+    cursor: pointer;
+    color: #3b82f6; /* Blue text color */
+}
+
+#change-location-btn:hover {
+    background-color: #f9fafb;
+}
+/* Add to styles/ass.css */
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    width: 90%;
+    max-width: 400px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+
+.modal-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    color: #9ca3af;
+}
+
+.modal-prompt-text {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.pincode-form {
+    display: flex;
+    gap: 10px;
+}
+
+#pincode-input {
+    flex-grow: 1;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+#pincode-submit-btn {
+    background-color: #4f46e5; /* A nice blue/indigo color */
+    color: white;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+#pincode-submit-btn:hover {
+    background-color: #4338ca;
+}
+
+/* Utility class to hide elements */
+.hidden {
+    display: none;
+}
+/* Add these new styles to styles/ass.css */
+
+.modal-content {
+    max-width: 500px; /* Make modal wider for more fields */
+}
+
+#address-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns */
+    gap: 16px;
+}
+
+#address-form input,
+#address-form textarea {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+}
+
+#address-form textarea {
+    resize: vertical; /* Allow vertical resizing only */
+}
+
+/* Make full-width fields span both columns */
+#address-form textarea,
+#address-form #state-input {
+    grid-column: 1 / -1;
+}
+
+#address-submit-btn {
+    background-color: #4f46e5;
+    color: white;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 8px;
+}
+
+#address-submit-btn:hover {
+    background-color: #4338ca;
+}
+.wishlist-icon {
+    position: absolute;
+    top: 2px;  /* Distance from the top of the container */
+    right: 1px; /* Distance from the right of the container */
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 10; /* Ensures the icon is on top of the image */
+    color: #555;
+    transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.wishlist-icon:hover {
+    transform: scale(1.1);
+}
+
+.wishlist-icon .fas.fa-heart {
+    color: #e53e3e; /* Red color for a wishlisted item */
+}
+.recom-image-container {
+    position: relative;
+}
+/* Add these new styles to the end of your styles/ass.css file */
+
+/* In your styles/ass.css file */
+
+.wishlist-card-actions {
+    margin-top: auto; /* <-- This is the magic property */
+    padding-top: 1rem; /* Add padding to ensure space above buttons */
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* A specific style for the remove button on the wishlist page */
+.wishlist-remove-button {
+    padding: 6px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    background-color: #ef4444; /* A solid red color */
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.wishlist-remove-button:hover {
+    background-color: #dc2626; /* A darker red on hover */
+    transform: translateY(-1px);
+}
+/* Add this new rule to your styles/ass.css file */
+
+.wishlist-card-actions .product-price {
+    width: 100%; /* Makes the price background stretch */
+    text-align: center; /* Centers the price text */
+    margin-top: 0;
+    margin-bottom: 0.5rem; /* Adds a little space below the price */
+    font-size: 1.125rem; /* Slightly larger font */
+}
+/* Add this to your styles/ass.css file */
+
+/* Keyframe animation for the heart icon */
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* Class to apply the animation */
+.heart-anim {
+  animation: heartBeat 0.3s ease-in-out;
+}
+/* Add this CSS to your styles/ass.css file */
+
+#toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #2d3748; /* Dark gray */
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    font-family: sans-serif;
+    visibility: hidden; /* Start hidden */
+    opacity: 0;
+    transform: translateY(-30px);
+    transition: all 0.5s ease-in-out;
+}
+
+#toast-notification.toast-show {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#toast-notification i {
+    color: #48bb78; /* Green checkmark */
+    font-size: 24px;
+}
+/* Add this to the bottom of styles/ass.css */
+
+/* Add this to the bottom of styles/ass.css */
+
+.reco-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05); /* A very light shadow */
+    transition: transform 0.2s ease-in-out;    /* Smooth animation for the scaling */
+}
+
+.reco-card:hover {
+    transform: scale(1.03); /* Makes the card grow by 3% on hover */
+}
+
+.reco-card-img {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+    margin-bottom: 8px;
+}
+
+.reco-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    height: 40px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.reco-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reco-card-price {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* Dynamic Ad Section Styles */
+/* Dynamic Ad Section Styles */
+#dynamic-ad-container {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+#dynamic-ad-container.ad-visible {
+    opacity: 1;
+}
+/* --- Advanced Slider Section --- */
+.slider-container {
+    height: 18rem;
+}
+@media (max-width: 768px) {
+    .slider-container { height: 12rem; }
+}
+
+.slider, .slide {
+    height: 100%;
+}
+.slide {
+    flex-shrink: 0;
+    width: 100%;
+}
+/* This makes the image fill the banner area */
+.slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; 
+}
+
+/* Arrow buttons */
+.slider-btn {
+    background: rgba(255, 255, 255, 0.7);
+    color: #1f2937;
+    border: none;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    transition: transform 0.2s;
+    z-index: 10;
+}
+.slider-btn:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Progress Bar Dots */
+.dots-container .dot {
+    background-color: rgba(0, 0, 0, 0.2);
+    width: 2rem;
+    height: 0.25rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.dots-container .dot.active {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.dots-container .dot .progress-fill {
+    background-color: #111827;
+    height: 100%;
+    width: 0%; /* Start with no fill */
+    border-radius: 9999px;
+}
+/* ================================== */
+/* ========= Custom Dropdown ======== */
+/* ================================== */
+
+.custom-select-wrapper {
+    position: relative;
+    width: 220px; /* You can adjust this width */
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+.custom-select-trigger {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db; /* Tailwind gray-300 */
+    border-radius: 6px;
+    background-color: white;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10+ */
+    user-select: none; /* Standard */
+}
+
+.custom-select-trigger:hover {
+    border-color: #a5b4fc; /* Tailwind indigo-300 */
+}
+
+.custom-select-wrapper.open .custom-select-trigger {
+    border-color: #818cf8; /* Tailwind indigo-400 */
+    box-shadow: 0 0 0 1px #818cf8;
+}
+
+.offer-logo {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    object-fit: contain;
+    flex-shrink: 0; /* Prevents the logo from shrinking */
+}
+
+/* An empty div used as a spacer when there is no logo */
+.offer-logo:empty {
+    width: 24px; /* Maintain space even if empty */
+}
+
+
+.custom-select-trigger span {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #374151; /* Tailwind gray-700 */
+}
+
+.dropdown-arrow {
+    margin-left: 8px;
+    color: #6b7280; /* Tailwind gray-500 */
+    transition: transform 0.3s ease;
+}
+
+.custom-select-wrapper.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.custom-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background-color: white;
+    border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+    border-radius: 6px;
+    box-shadow: 0 4px_6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* Tailwind shadow-md */
+    list-style: none;
+    padding: 4px 0;
+    margin-block: 0;
+    z-index: 10;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none; /* Toggled by JS */
+}
+
+.custom-select-wrapper.open .custom-options {
+    display: block;
+}
+
+.custom-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.custom-option:hover {
+    background-color: #f3f4f6; /* Tailwind gray-100 */
+}
+
+.custom-option.selected {
+    background-color: #eef2ff; /* Tailwind indigo-100 */
+    font-weight: 600;
+}
+
+.custom-option.selected span {
+    color: #4338ca; /* Tailwind indigo-700 */
+}
+
+.custom-option span {
+     color: #374151; /* Tailwind gray-700 */
+}
+.fly-to-cart-icon {
+    position: fixed;
+    z-index: 9999;
+    font-size: 100px;
+    color: #4f46e5; /* Main purple color */
+    background: white;
+    border-radius: 50%;
+    padding: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: scale(0.5);
+    /* MODIFIED: Changed the timing function for 'top' to create a smoother arc */
+    transition: left 1s ease-in-out,
+                top 1s ease-in,
+                transform 1s ease-out,
+                opacity 1s ease-out;
+}
+
+.fly-to-wishlist-icon {
+    position: fixed;
+    z-index: 9999;
+    font-size: 100px;
+    color: #ef4444; /* Red color for the heart */
+    background: white;
+    border-radius: 50%;
+    padding: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: scale(0.5);
+    /* MODIFIED: Changed the timing function for 'top' to create a smoother arc */
+    transition: left 1s ease-in-out,
+                top 1s ease-in,
+                transform 1s ease-out,
+                opacity 1s ease-out;
+}
+/* --- Corrected CSS Snippet for styles/ass.css --- */
+
+/* --- EXISTING CATEGORY BAR CSS FIX --- */
+/* Your current category bar is:
+   <div class="hidden md:flex items-center space-x-6 mt-4 pb-2 overflow-x-auto">
+   
+   To decrease the unused space on the right (the "Deals right side length"), 
+   we target the parent container of the navigation links inside the header.
+*/
+
+/* Apply this rule to ensure the category links container does not unnecessarily stretch 
+   and wraps its content when a scrollbar is active, ensuring proper padding is maintained. */
+.hidden.md\:flex.items-center.space-x-6.mt-4.pb-2.overflow-x-auto {
+    /* Setting display to inline-flex can sometimes force the container to shrink-wrap 
+       its content better than just 'flex', fixing the right-side gap. */
+    display: inline-flex; 
+    width: auto;
+}
+
+/* ================================================================
+   APPLE-STYLE GLASSMORHISM DROPDOWN MENU
+   ================================================================ */
+
+/* 1. The main container that sets the position and shape */
+.account-dropdown-menu-glass {
+    /* --- CUSTOM WIDTH CONTROL --- */
+    width: 250px; 
+    /* -------------------------- */
+
+    position: absolute;
+    right: 0;
+    
+    /* FIX: Fixed pixel value for top. 65px positions it just below the main search bar, 
+       making it overlap the category bar and reducing the empty vertical space. */
+    top: 65px; 
+    
+    background: none !important; 
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) !important; 
+    
+    /* Apply Glassmorphism container styles */
+    border-radius: 12px;
+    /* Height is dynamic, governed by content */
+    overflow: hidden; 
+    border: 1px solid rgba(255, 255, 255, 0.2); 
+    
+    /* Animation for smooth appearance */
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    z-index: 60;
+}
+
+.account-dropdown-menu-glass.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+}
+
+.account-dropdown-menu-glass:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* 2. The element that creates the blur effect */
+.glass-background-blur {
+    position: absolute;
+    inset: 0; /* Cover the entire dropdown area */
+    background-color: rgba(255, 252, 252, 0); 
+    backdrop-filter: blur(2px); 
+    -webkit-backdrop-filter: blur(20px); 
+    z-index: 1;
+}
+
+/* 3. The layer holding the actual text content */
+.dropdown-content-layer {
+    position: relative;
+    z-index: 5; 
+    color: rgb(0, 0, 0); 
+    padding: 8px 0; 
+}
+
+/* 4. Ensure icons are white and list items look correct */
+.dropdown-content-layer i {
+    color: rgb(0, 0, 0); 
+    opacity: 0.8;
+}
+
+/* 5. Ensure counters retain their yellow background for visibility */
+.dropdown-content-layer .wishlist-counter,
+.dropdown-content-layer .cart-counter {
+    z-index: 10;
+}/* --- Professional Wishlist Card Styles --- */
+
+.wishlist-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transform: translateY(0);
+}
+
+.wishlist-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.wishlist-remove-btn {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease-in-out;
+}
+
+/* Show remove button when hovering over the card */
+.wishlist-card:hover .wishlist-remove-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* On mobile, always show the remove button */
+@media (max-width: 768px) {
+    .wishlist-remove-btn {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+/* --- Professional Device Dropdown Styles --- *//* =================================================================
+   PROFESSIONAL SPLIT-LAYOUT REVIEW SYSTEM
+   ================================================================= */
+
+/* 1. Modal Sizing & Split Layout */
+.review-modal-wide {
+    max-width: 800px !important;
+    width: 95%;
+}
+
+.review-split-container {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+/* --- LEFT SIDE: WRITING AREA --- */
+.review-left-section {
+    flex: 1.5; /* 60% Width */
+    display: flex;
+    flex-direction: column;
+}
+
+.review-textarea-pro {
+    width: 100%;
+    height: 100%;
+    min-height: 150px;
+    padding: 16px;
+    background-color: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #1f2937;
+    transition: all 0.3s ease;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+}
+
+.review-textarea-pro:focus {
+    background-color: #fff;
+    border-color: #4f46e5;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+}
+
+.review-textarea-pro::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+/* --- RIGHT SIDE: STAR WIDGET --- */
+.review-right-section {
+    flex: 1; /* 40% Width */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    border: 2px dashed #d1d5db; /* Professional dashed border */
+    position: relative;
+    user-select: none;
+}
+
+/* Star Container */
+.star-rating-pro {
+    display: flex;
+    flex-direction: row-reverse; /* CRITICAL: Allows logic to flow Right -> Left */
+    gap: 8px;
+    font-size: 32px;
+    cursor: pointer;
+    margin-bottom: 5px;
+}
+
+.star-rating-pro i {
+    color: #e5e7eb; /* Default inactive gray */
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s;
+}
+
+/* Hover Animation: Scale the hovered star and all previous ones */
+.star-rating-pro i:hover,
+.star-rating-pro i:hover ~ i {
+    transform: scale(1.2);
+}
+
+/* Saved State Animation: Scale the active star and all previous ones */
+.star-rating-pro.has-rating i.active-star,
+.star-rating-pro.has-rating i.active-star ~ i {
+    transform: scale(1.1);
+}
+
+/* --- DYNAMIC COLORS (The Fix) --- */
+
+/* LOGIC: 
+   1. The first block applies when you HOVER.
+   2. The second block (.has-rating) applies ONLY when you click and leave (JS adds the class).
+   This prevents the "Sticky Color" issue.
+*/
+
+/* === SCORE 1-2 (RED / ANGRY) === */
+/* Hovering Logic */
+.star-rating-pro[data-score="1"] i:hover, 
+.star-rating-pro[data-score="1"] i:hover ~ i,
+.star-rating-pro[data-score="2"] i:hover, 
+.star-rating-pro[data-score="2"] i:hover ~ i {
+    color: #ef4444; 
+    text-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+}
+
+/* Saved Logic (Requires .has-rating) */
+.star-rating-pro.has-rating[data-score="1"] i.active-star, 
+.star-rating-pro.has-rating[data-score="1"] i.active-star ~ i,
+.star-rating-pro.has-rating[data-score="2"] i.active-star, 
+.star-rating-pro.has-rating[data-score="2"] i.active-star ~ i {
+    color: #ef4444; 
+    text-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+}
+
+
+/* === SCORE 3 (AMBER / OKAY) === */
+/* Hovering Logic */
+.star-rating-pro[data-score="3"] i:hover, 
+.star-rating-pro[data-score="3"] i:hover ~ i {
+    color: #f59e0b;
+    text-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+}
+
+/* Saved Logic (Requires .has-rating) */
+.star-rating-pro.has-rating[data-score="3"] i.active-star, 
+.star-rating-pro.has-rating[data-score="3"] i.active-star ~ i {
+    color: #f59e0b;
+    text-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+}
+
+
+/* === SCORE 4-5 (GREEN / HAPPY) === */
+/* Hovering Logic */
+.star-rating-pro[data-score="4"] i:hover, 
+.star-rating-pro[data-score="4"] i:hover ~ i,
+.star-rating-pro[data-score="5"] i:hover, 
+.star-rating-pro[data-score="5"] i:hover ~ i {
+    color: #10b981;
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+/* Saved Logic (Requires .has-rating) */
+.star-rating-pro.has-rating[data-score="4"] i.active-star, 
+.star-rating-pro.has-rating[data-score="4"] i.active-star ~ i,
+.star-rating-pro.has-rating[data-score="5"] i.active-star, 
+.star-rating-pro.has-rating[data-score="5"] i.active-star ~ i {
+    color: #10b981;
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+/* --- TEXT LABELS --- */
+.rating-label {
+    margin-top: 15px;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-height: 20px;
+    transition: color 0.2s;
+}
+
+.text-score-1, .text-score-2 { color: #ef4444; }
+.text-score-3 { color: #f59e0b; }
+.text-score-4, .text-score-5 { color: #10b981; }
+
+/* --- RESPONSIVE (MOBILE) --- */
+@media (max-width: 640px) {
+    .review-split-container {
+        flex-direction: column-reverse; /* Stars on top for mobile */
+        gap: 20px;
+    }
+    
+    .review-right-section {
+        border: none;
+        background: transparent;
+        padding: 0;
+    }
+    
+    .star-rating-pro { 
+        font-size: 40px; 
+    }
+}
+/* --- Professional Deal Card Styles --- */
+
+/* The Card Container */
+.deal-card {
+    background: #ffffff;
+    border-radius: 20px; /* Softer, modern corners */
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #f1f5f9; /* Subtle border */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer; /* Whole card is clickable */
+}
+
+/* Hover State: Lift up + stronger shadow */
+.deal-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: #e2e8f0;
+}
+
+/* Image Area */
+.deal-image-wrapper {
+    position: relative;
+    height: 240px; /* Fixed height for uniformity */
+    background: #f8fafc; /* Light gray background for product contrast */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow: hidden;
+}
+
+.deal-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.5s ease;
+    mix-blend-mode: multiply; /* Helps blend white bg images */
+}
+
+.deal-card:hover .deal-image {
+    transform: scale(1.08); /* Gentle zoom on hover */
+}
+
+/* Discount Badge */
+.deal-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #ef4444; /* Red */
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    z-index: 10;
+}
+
+/* Wishlist Button */
+.deal-wishlist-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+    z-index: 20; /* Above image */
+    color: #9ca3af;
+}
+
+.deal-wishlist-btn:hover {
+    transform: scale(1.1);
+    color: #ef4444;
+}
+
+/* Content Area */
+.deal-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.deal-category {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6366f1; /* Indigo */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.deal-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+    /* Limit to 2 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 2.8em; 
+}
+
+.deal-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: auto; /* Pushes price to bottom of flex area */
+    margin-bottom: 1rem;
+}
+
+.current-price {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.old-price {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+/* Add to Cart Button */
+.deal-cart-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 20; /* Ensures it's clickable over the card link */
+}
+
+.deal-cart-btn.default {
+    background: #1e293b; /* Dark Slate */
+    color: white;
+}
+
+.deal-cart-btn.default:hover {
+    background: #0f172a; /* Darker Slate */
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+}
+
+.deal-cart-btn.added {
+    background: #10b981; /* Green */
+    color: white;
+}
+
+.deal-cart-btn.added:hover {
+    background: #059669;
+}

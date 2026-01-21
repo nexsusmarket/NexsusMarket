@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Deals | NexusMarket</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles/ass.css">
+</head>
+<body class="bg-gray-50 font-sans">
+    
+    <header class="gradient-bg text-white shadow-lg sticky-header z-50">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="text-2xl font-bold"><i class="fas fa-atom logo-spin"></i></div>
+                    <a href="index.html" class="text-2xl font-bold tracking-tight">NexusMarket</a>
+                </div>
+                
+                <div class="hidden md:flex flex-1 mx-8">
+                    <div class="relative w-full">
+                        <input id="searchInput" type="text" placeholder="Search for products, brands and more" class="w-full py-2 px-4 rounded-full text-gray-800 focus:outline-none search-bar shadow-sm"/>
+                        <button id="searchBtn" class="absolute right-0 top-0 h-full px-4 bg-yellow-400 text-gray-900 rounded-r-full hover:bg-yellow-500 transition font-bold">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>  
+                
+                <nav id="main-navigation" class="flex items-center space-x-6">
+                    <a href="signin.html" class="hidden md:block hover:text-yellow-200 transition">
+                        <div class="text-xs opacity-75">Hello, Sign in</div>
+                        <div class="font-bold text-sm">Account</div>
+                    </a>
+                    <a href="wishlist.html" class="relative hover:text-yellow-200 transition">
+                        <i class="fas fa-heart text-xl"></i>
+                        <span class="wishlist-counter absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
+                    </a>
+                    <a href="cart.html" class="relative hover:text-yellow-200 transition">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span class="cart-counter absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="mt-3 md:hidden">
+                <div class="relative">
+                    <input type="text" placeholder="Search NexusMarket" class="w-full py-2 px-4 rounded-full text-gray-800 focus:outline-none shadow-sm">
+                    <button class="absolute right-0 top-0 h-full px-4 text-gray-600"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+
+                <div class="hidden md:flex items-center space-x-8 mt-4 pb-1 text-sm font-medium overflow-x-auto opacity-90">
+                    <a href="category.html?category=electronics" class="nav-item hover:text-yellow-300 transition">Electronics</a>
+                    <a href="category.html?category=homeappliances" class="nav-item hover:text-yellow-300 transition">Home & Appliances</a>
+                    <a href="category.html?category=mobile" class="nav-item hover:text-yellow-300 transition">Mobiles</a>
+                    <a href="category.html?category=fashion" class="nav-item hover:text-yellow-300 transition">Fashion</a>
+                    <a href="category.html?category=laptop" class="nav-item hover:text-yellow-300 transition">Laptops</a>
+                    <a href="category.html?category=grocery" class="nav-item hover:text-yellow-300 transition">Grocery</a>
+                    <a href="topDeals.html" class="nav-item hover:text-yellow-300 transition">Top Deals</a>
+                </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        
+        <div class="mb-10 text-center relative">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Exclusive <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Deals</span></h1>
+            <p class="text-gray-500 text-lg">Handpicked offers just for you. Limited time only.</p>
+            
+            <div class="w-24 h-1.5 mx-auto mt-4 rounded-full gradient-bg"></div>
+        </div>
+
+        <section class="top-product-list grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            </section>
+
+    </main>
+
+    <div id="login-prompt-modal" class="modal-overlay hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center transform transition-all scale-100">
+            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 text-purple-600 text-2xl">
+                <i class="fas fa-user-lock"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2 text-gray-900">Sign In Required</h2>
+            <p class="text-gray-500 mb-6">Please sign in to access your wishlist and cart.</p>
+            <div class="flex gap-3">
+                <button id="close-prompt-btn" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 font-semibold text-gray-700 hover:bg-gray-50 transition">Cancel</button>
+                <a href="signin.html" class="flex-1 px-4 py-2.5 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 transition shadow-lg shadow-purple-200">Sign In</a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="javaScript/auth.js"></script>
+    <script type="module" src="javaScript/topDeals.js"></script>
+</body>
+</html>

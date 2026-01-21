@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - NexusMarket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Animated Gradient Background --- */
+        body { 
+            background: linear-gradient(-45deg, #6b21a8, #4f46e5, #22d3ee, #3b82f6);
+            background-size: 400% 400%;
+            animation: animateGradient 15s ease infinite;
+            position: relative; /* Needed for the bubbles container */
+            overflow: hidden; /* Prevents scrollbars from bubbles */
+        }
+
+        @keyframes animateGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- Floating Bubbles Animation --- */
+        .bubbles-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0; /* Behind the sign-in card */
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -150px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            animation: floatUp 25s infinite linear;
+        }
+
+        @keyframes floatUp {
+            from {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            to {
+                transform: translateY(-120vh); /* Move up the full screen height and more */
+                opacity: 0;
+            }
+        }
+        
+        /* --- Customize each bubble for a random effect --- */
+        .bubble:nth-child(1) { left: 10%; animation-duration: 25s; animation-delay: 0s; width: 40px; height: 40px; }
+        .bubble:nth-child(2) { left: 20%; animation-duration: 15s; animation-delay: 2s; width: 60px; height: 60px; }
+        .bubble:nth-child(3) { left: 25%; animation-duration: 30s; animation-delay: 4s; width: 20px; height: 20px; }
+        .bubble:nth-child(4) { left: 40%; animation-duration: 22s; animation-delay: 0s; width: 80px; height: 80px; }
+        .bubble:nth-child(5) { left: 50%; animation-duration: 18s; animation-delay: 3s; width: 30px; height: 30px; }
+        .bubble:nth-child(6) { left: 65%; animation-duration: 28s; animation-delay: 1s; width: 50px; height: 50px; }
+        .bubble:nth-child(7) { left: 75%; animation-duration: 19s; animation-delay: 2s; width: 70px; height: 70px; }
+        .bubble:nth-child(8) { left: 90%; animation-duration: 24s; animation-delay: 5s; width: 45px; height: 45px; }
+
+
+        /* --- Sign-in Card and Form Styles --- */
+        .signin-container {
+            position: relative; /* To ensure it's on top of the bubbles */
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* Adjustments for text and input colors to be visible on the new card */
+        .signin-container h2, .signin-container a {
+            color: #ffffff;
+        }
+        .signin-container p, .signin-container span, .input-group .input-icon {
+            color: #e2e8f0; /* Lighter gray for better contrast */
+        }
+        .signin-container input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+        }
+        .signin-container input::placeholder {
+            color: #cbd5e1;
+        }
+        .signin-container input:focus {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: #a78bfa; /* Light purple */
+            --tw-ring-color: #a78bfa;
+        }
+        .toggle-password-icon {
+            color: #cbd5e1 !important;
+        }
+        #toggle-link {
+            color: #c4b5fd !important;
+        }
+        #toggle-link:hover {
+            color: #ffffff !important;
+        }
+
+
+        /* --- Original Input Group Styles (Required for Icons) --- */
+        .input-group { position: relative; }
+        .input-group .input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); }
+        .input-group input { padding-left: 3rem; }
+        .input-group .toggle-password-icon {
+            position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer;
+        }
+        .input-group input[placeholder*="Password"],
+        .input-group input[placeholder*="password"] { padding-right: 3rem; }
+    </style>
+</head>
+<body class="min-h-screen w-full flex items-center justify-center p-4">
+
+    <div class="bubbles-container">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <div class="signin-container w-full max-w-md p-8 space-y-6 rounded-2xl shadow-2xl">
+        <div class="text-center">
+            <a href="index.html" class="inline-flex items-center space-x-2 text-2xl font-bold">
+                <i class="fas fa-atom logo-spin"></i>
+                <span>NexusMarket</span>
+            </a>
+            <h2 id="form-title" class="mt-4 text-3xl font-bold">Sign In</h2>
+            <p id="form-description" class="mt-2 text-sm">Enter your credentials to access your account.</p>
+        </div>
+
+        <form id="signin-form" class="space-y-4">
+            <div class="input-group">
+                <i class="fas fa-user input-icon"></i>
+                <input id="signin-identifier" type="text" required class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="Mobile Number or Email">
+            </div>
+            <div class="input-group">
+                <i class="fas fa-lock input-icon"></i>
+                <input id="signin-password" type="password" required class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="Password">
+                <i class="fas fa-eye-slash toggle-password-icon"></i>
+            </div>
+            <div>
+                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition">Sign In</button>
+            </div>
+        </form>
+
+        <form id="signup-form" class="space-y-4" style="display: none;" novalidate>
+            <div id="signup-details-stage" class="space-y-4">
+                <div class="input-group">
+                    <i class="fas fa-id-card input-icon"></i>
+                    <input id="signup-name" type="text" required class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="Full Name">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-mobile-alt input-icon"></i>
+                    <input id="signup-phone" type="tel" required pattern="[0-9]{10}" maxlength="10" class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="10-digit Mobile Number">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="input-group flex-grow">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input id="signup-email" type="email" required class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="Email Address">
+                    </div>
+                    <button type="button" id="send-otp-btn" class="px-4 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition whitespace-nowrap">Send OTP</button>
+                </div>
+            </div>
+            <div id="signup-verification-stage" style="display: none;" class="space-y-4">
+                <div class="input-group">
+                    <i class="fas fa-key input-icon"></i>
+                    <input id="signup-otp" type="text" required class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="6-Digit Code from Email">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input id="signup-password" type="password" required minlength="6" class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="Create Password (min. 6 characters)">
+                    <i class="fas fa-eye-slash toggle-password-icon"></i>
+                </div>
+            </div>
+            <div>
+                <button type="submit" id="create-account-btn" class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition disabled:bg-purple-400 disabled:cursor-not-allowed" disabled>Create Account</button>
+            </div>
+        </form>
+        
+        <form id="forgot-password-form" class="space-y-4" style="display: none;">
+            <div id="email-stage">
+                <div class="input-group">
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input id="forgot-email" type="email" required class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="Enter your registered email">
+                </div>
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700">Send Code</button>
+                </div>
+            </div>
+            <div id="otp-verification-stage" style="display: none;" class="space-y-4">
+                 <div class="input-group">
+                    <i class="fas fa-key input-icon"></i>
+                    <input id="forgot-otp" type="text" required class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="6-Digit Code from Email">
+                </div>
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700">Verify Code</button>
+                </div>
+            </div>
+            <div id="new-password-stage" style="display: none;" class="space-y-4">
+                <div class="input-group">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input id="forgot-new-password" type="password" required minlength="6" class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="New Password (min. 6 characters)">
+                    <i class="fas fa-eye-slash toggle-password-icon"></i>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-check-circle input-icon"></i>
+                    <input id="forgot-confirm-password" type="password" required class="w-full px-3 py-3 rounded-lg focus:outline-none focus:ring-2" placeholder="Confirm New Password">
+                    <i class="fas fa-eye-slash toggle-password-icon"></i>
+                </div>
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700">Reset Password</button>
+                </div>
+            </div>
+        </form>
+        
+        <div id="message" class="text-center text-sm font-medium"></div>
+
+        <p id="toggle-container" class="text-sm text-center">
+            <span id="signin-toggle-text">Don't have an account?</span>
+            <a href="#" id="toggle-link" class="font-medium hover:text-white transition">Sign Up</a>
+        </p>
+    </div>
+
+    <script type="module" src="javascript/signin.js"></script>
+</body>
+</html>

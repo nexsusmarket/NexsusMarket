@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>Trending Brands</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/ass.css">
+    </head>
+    <body>
+    <header class="gradient-bg text-white shadow-lg sticky-header">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="text-2xl font-bold"><i class="fas fa-atom logo-spin"></i></div>
+                    <a href="index.html" class="text-2xl font-bold">NexusMarket</a>
+                </div>
+                <div class="hidden md:flex flex-1 mx-8">
+                    <div class="relative w-full">
+                        <input id="searchInput" type="text" placeholder="Search for products, brands and more" class="w-full py-2 px-4 rounded-full text-gray-800 focus:outline-none search-bar"/>
+                        <button id="searchBtn" class="absolute right-0 top-0 h-full px-4 bg-yellow-400 text-gray-800 rounded-r-full hover:bg-yellow-500 transition" aria-label="Search">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div> 
+                
+                <nav id="main-navigation" class="flex items-center space-x-6">
+                    </nav>
+            </div>
+                <div class="hidden md:flex items-center space-x-8 mt-4 pb-1 text-sm font-medium overflow-x-auto opacity-90">
+                    <a href="category.html?category=electronics" class="nav-item hover:text-yellow-300 transition">Electronics</a>
+                    <a href="category.html?category=homeappliances" class="nav-item hover:text-yellow-300 transition">Home & Appliances</a>
+                    <a href="category.html?category=mobile" class="nav-item hover:text-yellow-300 transition">Mobiles</a>
+                    <a href="category.html?category=fashion" class="nav-item hover:text-yellow-300 transition">Fashion</a>
+                    <a href="category.html?category=laptop" class="nav-item hover:text-yellow-300 transition">Laptops</a>
+                    <a href="category.html?category=grocery" class="nav-item hover:text-yellow-300 transition">Grocery</a>
+                    <a href="topDeals.html" class="nav-item hover:text-yellow-300 transition">Top Deals</a>
+                </div>
+        </div>
+    </header>
+        
+<section class="py-4 section-trend">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            
+            <a href="brand.html?name=Apple" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/apple.png" alt="Apple Logo">
+                </div>
+            </a>
+
+            <a href="brand.html?name=HP" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/hp.png" alt="HP Logo">
+                </div>
+            </a>
+
+            <a href="brand.html?name=Nike" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/nike.png" alt="Nike Logo">
+                </div>
+            </a>
+            
+            <a href="brand.html?name=Levi's" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/levis.png" alt="Levi's Logo">
+                </div>
+            </a>
+            
+            <a href="brand.html?name=Samsung" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/samsung.png" alt="Samsung Logo">
+                </div>
+            </a>
+            
+            <a href="brand.html?name=ITC" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/itc.png" alt="ITC Logo">
+                </div>
+            </a>
+            
+            <a href="brand.html?name=Oneplus" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/oneplus.png" alt="OnePlus Logo">
+                </div>
+            </a>
+            
+            <a href="brand.html?name=Motorola" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/motorola.png" alt="Motorola Logo">
+                </div>
+            </a>
+            
+            <a href="brand.html?name=Sony" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/sony.png" alt="Sony Logo">
+                </div>
+            </a>
+            
+            <a href="brand.html?name=Realme" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/realme.png" alt="Realme Logo">
+                </div>
+            </a>
+            
+            <a href="brand.html?name=Google" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/google.png" alt="Google Logo">
+                </div>
+            </a>
+            
+            <a href="brand.html?name=Asus" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/asus.png" alt="Asus Logo">
+                </div>
+            </a>
+
+            <a href="brand.html?name=Fastrack" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/fastrack.png" alt="Fastrack Logo">
+                </div>
+            </a>
+
+            <a href="brand.html?name=Vivo" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/vivo.png" alt="Vivo Logo">
+                </div>
+            </a>
+
+            <a href="brand.html?name=Britania" class="brand-card">
+                <div class="group flex items-center justify-center p-6 h-52 bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                    <img class="h-40 object-contain" src="images/britania.png" alt="Britannia Logo">
+                </div>
+            </a>
+            
+        </div>
+    </div>
+</section>
+    <script type="module" src="javaScript/auth.js"></script>
+    <script type="module" src="javascript/searchHandler.js"></script> 
+</body>
+</html>

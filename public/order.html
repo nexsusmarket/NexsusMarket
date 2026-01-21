@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Orders - NexusMarket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/ass.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Liquid Glass Styles */
+        .liquid-glass-modal {
+            background: rgba(255, 255, 255, 0);
+            box-shadow: 0 8px 32px 0 rgba(254, 254, 255, 0.277);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+        
+        .liquid-node {
+            background: rgba(255, 255, 255, 0.795);
+            box-shadow: 0 4px 10px 0 rgba(0,0,0,0.05);
+            backdrop-filter: blur(5px);
+        }
+
+        .liquid-line {
+            background: linear-gradient(180deg, #4f46e5 0%, #a78bfa 100%);
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-800 font-inter">
+
+    <header class="gradient-bg text-white shadow-lg sticky-header z-50">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <a href="index.html" class="text-2xl font-bold flex items-center space-x-2">
+                    <i class="fas fa-atom logo-spin"></i><span>NexusMarket</span>
+                </a>
+                <nav id="main-navigation" class="flex items-center space-x-6">
+                    <a href="index.html" class="hover:text-gray-200">Home</a>
+                    <a href="profile.html" class="hover:text-gray-200">Profile</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8 max-w-6xl">
+        <div class="flex items-baseline justify-between mb-6 border-b pb-4">
+            <h1 class="text-3xl font-bold text-gray-900">Your Orders</h1>
+            <div class="text-sm text-gray-500">
+                <span id="total-orders-count" class="font-bold text-gray-900">0</span> active orders
+            </div>
+        </div>
+
+        <div id="orders-container" class="space-y-8 min-h-[50vh]">
+            </div>
+    </main>
+    
+    <div id="cancel-confirm-modal" class="modal-overlay hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 border border-gray-100">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h3 class="text-lg font-bold text-gray-900">Cancel this order?</h3>
+            </div>
+            
+            <div class="px-6 py-6">
+                <p class="text-gray-600 mb-4 text-base">Are you sure you want to cancel?</p>
+                
+                <div class="bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
+                    <i class="fas fa-exclamation-triangle text-red-500 mt-0.5 text-sm"></i>
+                    <span class="text-sm text-red-600 font-medium">Warning: This action cannot be undone.</span>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                <button id="deny-cancel-btn" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition shadow-sm">
+                    Don't Cancel
+                </button>
+                <button id="confirm-cancel-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition shadow-md shadow-red-200">
+                    Yes, Cancel Order
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tracking-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-gray-900/30 backdrop-blur-sm" id="tracking-backdrop"></div>
+        
+        <div class="liquid-glass-modal w-full max-w-2xl relative p-8 transform transition-all scale-100 opacity-100 overflow-hidden">
+            
+            <div class="flex justify-between items-start mb-8 relative z-10">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Track Package</h2>
+                    <p class="text-gray-500 text-sm mt-1">Order ID: <span id="track-order-id" class="font-mono text-indigo-600"></span></p>
+                </div>
+                <button id="close-tracking-btn" class="w-10 h-10 rounded-full bg-white/50 hover:bg-white flex items-center justify-center text-gray-600 transition shadow-sm">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <div class="relative z-10 pl-4 py-2">
+                <div class="absolute left-[31px] top-4 bottom-10 w-[2px] bg-gray-300/50 -z-10"></div>
+                <div id="tracking-timeline-container" class="space-y-8"></div>
+            </div>
+
+            <div class="absolute -top-20 -right-20 w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+            <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        </div>
+    </div>
+
+    <script type="module" src="javascript/order.js"></script>
+    <script type="module" src="javascript/auth.js"></script>
+</body>
+</html>
