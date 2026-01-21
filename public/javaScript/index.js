@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // --- 1. Fetch Product Data Dynamically ---
     let allProductsData = [];
     try {
-        const response = await fetch('./javascript/products.json');
+        const response = await fetch('./javaScript/products.json');
         if (!response.ok) throw new Error("Failed to fetch products.json");
         allProductsData = await response.json();
     } catch (error) {

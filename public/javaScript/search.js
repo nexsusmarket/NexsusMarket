@@ -312,7 +312,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         // 1. Fetch JSON Data
-        const response = await fetch('./javascript/products.json');
+        const response = await fetch('./javaScript/products.json');
         if (!response.ok) throw new Error("Failed to load products.json");
         const rawData = await response.json();
 

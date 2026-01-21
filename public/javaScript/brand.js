@@ -280,7 +280,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         // --- 1. Fetch the JSON data (THE NEW WAY) ---
-        const response = await fetch('./javascript/products.json');
+        const response = await fetch('./javaScript/products.json');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

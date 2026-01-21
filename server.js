@@ -63,10 +63,10 @@ const transporter = nodemailer.createTransport({
 function getFlattenedProducts() {
     try {
         // CHANGED: Point to the 'javascript' folder
-        const productFilePath = path.join(__dirname, 'javascript', 'products.json'); 
+        const productFilePath = path.join(__dirname, 'javaScript', 'products.json'); 
         
         if (!fs.existsSync(productFilePath)) {
-            console.error("❌ javascript/products.json not found. Recommendations cannot run.");
+            console.error("❌ javaScript/products.json not found. Recommendations cannot run.");
             return [];
         }
         
@@ -114,7 +114,7 @@ function generateAndSaveRecommendations(phone) {
     return new Promise((resolve, reject) => {
         // 1. Define paths and arguments
         const scriptPath = path.join(__dirname, 'recommender.py');
-        const productsPath = path.join(__dirname, 'public', 'javascript', 'products.json');
+        const productsPath = path.join(__dirname, 'public', 'javaScript', 'products.json');
         const mongoUri = process.env.MONGO_URI;
 
         console.log(`🧠 Spawning Python Script for user: ${phone}`);

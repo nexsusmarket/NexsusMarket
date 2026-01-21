@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        const response = await fetch('./javascript/products.json');
+        const response = await fetch('./javaScript/products.json');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const allProductsData = await response.json();
         const product = findProductByName(allProductsData, productName);

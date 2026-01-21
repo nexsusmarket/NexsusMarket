@@ -1,4 +1,4 @@
-// javascript/auth.js
+// javaScript/auth.js
 
 // Import the API service function needed to fetch current data
 import { fetchUserData } from './apiService.js'; // You must ensure this import path is correct

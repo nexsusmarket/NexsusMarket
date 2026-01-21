@@ -59,7 +59,7 @@ async function performSearch() {
 
         try {
             // UPDATED PATH: Points to the products.json inside the javascript folder
-            const response = await fetch('./javascript/products.json'); 
+            const response = await fetch('./javaScript/products.json'); 
             if (!response.ok) {
                 throw new Error("Could not load products.json");
             }
