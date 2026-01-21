@@ -7,7 +7,7 @@ const isLocal = window.location.hostname === '127.0.0.1' || window.location.host
 
 const BASE_URL = isLocal 
     ? 'http://localhost:3000' 
-    : 'https://nexus-backend.onrender.com';
+    : 'https://nexsusmarket.onrender.com';
 
 const API_URL = `${BASE_URL}/api/user`;
 const AUTH_URL = BASE_URL; 

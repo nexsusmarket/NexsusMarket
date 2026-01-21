@@ -103,7 +103,7 @@ function highlightActiveLink() {
 document.addEventListener('DOMContentLoaded', highlightActiveLink);
 // --- Student Discount API Calls ---
 async function requestDiscountCode(studentEmail, productName) {
-    const response = await fetch('https://nexus-backend.onrender.com/api/user/request-discount-code', {
+    const response = await fetch('/api/user/request-discount-code', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -117,7 +117,7 @@ async function requestDiscountCode(studentEmail, productName) {
 }
 
 async function verifyDiscountCode(verificationCode, productName) {
-    const response = await fetch('https://nexus-backend.onrender.com/api/user/verify-discount-code', {
+    const response = await fetch('/api/user/verify-discount-code', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

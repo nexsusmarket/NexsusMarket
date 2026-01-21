@@ -4,7 +4,7 @@ import { setupSearchBar } from "./searchHandler.js";
 // --- API URL SETUP ---
 const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
     ? 'http://localhost:3000'
-    : 'https://nexus-backend.onrender.com';
+    : 'https://nexsusmarket.onrender.com';
 
 // --- ANIMATION 1: Fly to Cart ---
 function animateFlyToCart(buttonElement) {

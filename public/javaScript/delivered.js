@@ -3,7 +3,7 @@ import { fetchUserData, addToCart } from './apiService.js';
 // --- 1. GLOBAL CONFIGURATION & STATE ---
 const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
     ? 'http://localhost:3000'                  
-    : 'https://nexus-backend.onrender.com';    
+    : 'https://nexsusmarket.onrender.com';    
 
 // ✅ FIX: Define these at the TOP so all functions can see them
 let allDeliveredItems = [];

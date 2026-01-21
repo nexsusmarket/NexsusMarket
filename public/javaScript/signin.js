@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // AUTOMATIC SWITCH: If running on 127.0.0.1 or localhost, use local backend. Otherwise, use Render.
 const API_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
     ? 'http://localhost:3000' 
-    : 'https://nexus-backend.onrender.com';
+    : 'https://nexsusmarket.onrender.com';
 
 // Debug check to see which one is being used
 console.log("Current Backend URL:", API_URL);
