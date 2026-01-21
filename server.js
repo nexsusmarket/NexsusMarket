@@ -14,6 +14,13 @@ const cron = require('node-cron');
 
 // --- 2. APP INITIALIZATION & MIDDLEWARE ---
 const app = express();
+// 1. Serve all files from the 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 2. If someone goes to your homepage, give them index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 const PORT = process.env.PORT || 3000;
 
 const otpStore = {}; // In-memory store for signup OTPs
