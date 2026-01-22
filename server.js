@@ -42,7 +42,7 @@ const client = new MongoClient(uri);
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     host: 'smtp.gmail.com',
-    port: 465,
+    port: 587,
     secure: false, // Must be false for 587
     auth: {
         user: process.env.EMAIL_USER,
