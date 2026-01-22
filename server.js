@@ -1385,7 +1385,7 @@ app.post('/api/user/contact-support', async (req, res) => {
 
 // --- [FIX PART 2] CATCH-ALL ROUTE (MUST BE LAST) ---
 // This ensures that any page visit that isn't an API call returns your website
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
