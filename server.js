@@ -14,13 +14,10 @@ const cron = require('node-cron');
 
 // --- 2. APP INITIALIZATION & MIDDLEWARE ---
 const app = express();
-// 1. Serve all files from the 'public' folder
+
+// --- [FIX PART 1] Serve all files from the 'public' folder ---
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 2. If someone goes to your homepage, give them index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 const PORT = process.env.PORT || 3000;
 
 const otpStore = {}; // In-memory store for signup OTPs
@@ -63,6 +60,7 @@ const transporter = nodemailer.createTransport({
 function getFlattenedProducts() {
     try {
         // CHANGED: Point to the 'javascript' folder
+        // NOTE: Ensure your folder on GitHub is named exactly 'javaScript' or 'javascript'
         const productFilePath = path.join(__dirname, 'javaScript', 'products.json'); 
         
         if (!fs.existsSync(productFilePath)) {
@@ -121,7 +119,7 @@ function generateAndSaveRecommendations(phone) {
 
         // 2. Spawn Python Process
         // Arguments matches your python code: [phone, products_file, mongo_uri]
-// DETECT OS: If Windows, use 'python', otherwise use 'python3'
+        // DETECT OS: If Windows, use 'python', otherwise use 'python3'
         const pythonCommand = process.platform === "win32" ? "python" : "python3";
         
         console.log(`🧠 Spawning Python Script for user: ${phone} using command: ${pythonCommand}`);
@@ -1385,6 +1383,11 @@ app.post('/api/user/contact-support', async (req, res) => {
     }
 });
 
+// --- [FIX PART 2] CATCH-ALL ROUTE (MUST BE LAST) ---
+// This ensures that any page visit that isn't an API call returns your website
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // -- 5. START SERVER --
 connectToDbAndStartServer();
