@@ -1,5 +1,5 @@
 // server.js
-
+console.log("SMTP HOST:", process.env.EMAIL_HOST);
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
