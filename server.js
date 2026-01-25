@@ -1,7 +1,9 @@
 // server.js
-console.log("SMTP HOST:", process.env.EMAIL_HOST);
-console.log("SMTP PORT:", process.env.EMAIL_PORT);
-console.log("SMTP USER:", process.env.EMAIL_USER);
+// --- 1. IMPORTS ---
+require('dotenv').config();
+const axios = require('axios'); // <--- ADD THIS LINE
+const express = require('express');
+// ... rest of your imports
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -41,15 +43,44 @@ let usersCollection;
 const client = new MongoClient(uri);
 
 // --- NODEMAILER TRANSPORTER ---
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER, // MUST be "apikey"
-    pass: process.env.EMAIL_PASS
+const transporter = {
+  sendMail: async (mailOptions) => {
+    try {
+      // Prepare the data for Brevo
+      const data = {
+        sender: { 
+            name: "NexusMarket", 
+            email: process.env.SENDER_EMAIL // Must be your verified Brevo email
+        },
+        to: [{ email: mailOptions.to }], // Converts 'user@gmail.com' to object
+        subject: mailOptions.subject,
+        htmlContent: mailOptions.html // Maps 'html' to Brevo's 'htmlContent'
+      };
+
+      // Send the request safely using axios
+      const response = await axios.post(
+        'https://api.brevo.com/v3/smtp/email',
+        data,
+        {
+          headers: {
+            'api-key': process.env.BREVO_API_KEY,
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+          }
+        }
+      );
+
+      console.log(`✅ API Email sent successfully to ${mailOptions.to}`);
+      return response.data;
+      
+    } catch (error) {
+      // Log the specific error from Brevo if something goes wrong
+      console.error("❌ Email API Error:", error.response ? error.response.data : error.message);
+      // We return null instead of crashing so your server stays alive
+      return null;
+    }
   }
-});
+};
 
 
 // ============================================================
