@@ -1,7 +1,4 @@
 // server.js
-console.log("SMTP HOST:", process.env.EMAIL_HOST);
-console.log("SMTP PORT:", process.env.EMAIL_PORT);
-console.log("SMTP USER:", process.env.EMAIL_USER);
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -11,7 +8,6 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt = require('bcrypt');
-const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 
 // --- 2. APP INITIALIZATION & MIDDLEWARE ---
@@ -40,16 +36,19 @@ const uri = process.env.MONGO_URI;
 let usersCollection;
 const client = new MongoClient(uri);
 
-// --- NODEMAILER TRANSPORTER ---
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER, // MUST be "apikey"
-    pass: process.env.EMAIL_PASS
-  }
-});
+const { Resend } = require('resend');
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+async function sendMail({ to, subject, html }) {
+    return resend.emails.send({
+        from: process.env.EMAIL_FROM,
+        to,
+        subject,
+        html
+    });
+}
+
 
 
 // ============================================================
@@ -110,6 +109,11 @@ function calculateNameSimilarity(name1, name2) {
 // ============================================================
 //  👇 HYBRID ENGINE: NODE CALLS PYTHON 👇
 // ============================================================
+if (process.env.RENDER) {
+    console.log("⚠️ Skipping Python recommender on Render Free");
+    return Promise.resolve();
+}
+
 function generateAndSaveRecommendations(phone) {
     return new Promise((resolve, reject) => {
         // 1. Define paths and arguments
@@ -242,8 +246,7 @@ async function processOrderStatusUpdates(user) {
                 </div>`;
 
                 try {
-                    await transporter.sendMail({
-                        from: `"NexusMarket Logistics" <${process.env.EMAIL_USER}>`,
+                    await sendMail({
                         to: order.confirmationEmail,
                         subject: `Out for Delivery: OTP for Order #${order.orderId}`,
                         html: emailHtml
@@ -369,8 +372,7 @@ async function processOrderStatusUpdates(user) {
             </div>`;
 
             try {
-                await transporter.sendMail({
-                    from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
+                await sendMail({
                     to: order.confirmationEmail,
                     subject: `Delivered: Order #${order.orderId} was successful`,
                     html: deliveredEmailHtml
@@ -449,6 +451,8 @@ function startScheduledTasks() {
 
 app.post('/signup/send-otp', async (req, res) => {
     try {
+        console.log("EMAIL_FROM =", process.env.EMAIL_FROM);
+        console.log("RESEND KEY PRESENT =", !!process.env.RESEND_API_KEY);
         const { name, phone, email } = req.body;
         if (!name || !phone || !email) {
             return res.status(400).json({ message: 'Name, phone, and email are required.' });
@@ -466,8 +470,7 @@ app.post('/signup/send-otp', async (req, res) => {
         
         otpStore[email] = { name, phone, otpHash };
 
-        await transporter.sendMail({
-            from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
+        await sendMail({
             to: email,
             subject: 'Your NexusMarket Account Verification Code',
             html: `<div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;"><h2>Welcome to NexusMarket!</h2><p>Your verification code is:</p><p style="font-size: 28px; font-weight: bold; letter-spacing: 5px; background: #f0f0f0; padding: 10px; border-radius: 5px;">${otp}</p><p>This code does not expire.</p></div>`
@@ -514,8 +517,7 @@ app.post('/signup', async (req, res) => {
         try {
             const welcomeEmailHtml = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 8px; text-align: center; color: #333;"><h1 style="color: #4f46e5;">🎉 Welcome to NexusMarket, ${name}!</h1><p style="font-size: 16px;">Your account has been successfully created. We're thrilled to have you join our community.</p><p style="font-size: 16px;">You can now sign in using your credentials and start exploring thousands of products.</p></div>`;
             
-            await transporter.sendMail({
-                from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
+            await sendMail({
                 to: email,
                 subject: 'Welcome to NexusMarket! Your Account is Ready.',
                 html: welcomeEmailHtml
@@ -579,8 +581,7 @@ app.post('/request-password-reset', async (req, res) => {
             { $set: { resetOtpHash: hashedOtp } }
         );
 
-        await transporter.sendMail({
-            from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
+        await sendMail({
             to: email,
             subject: 'Your NexusMarket Password Reset Code',
             html: `<div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;"><h2>Password Reset Request</h2><p>Your verification code is:</p><p style="font-size: 28px; font-weight: bold; letter-spacing: 5px; background: #f0f0f0; padding: 10px; border-radius: 5px;">${otp}</p><p>This code does not expire.</p></div>`
@@ -881,8 +882,7 @@ app.post('/api/user/orders', async (req, res) => {
             
             const emailHtml = `<div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;"><h1>Thank you for your order!</h1><p><strong>Order ID:</strong> ${order.orderId}</p><p><strong>Order Date:</strong> ${formattedOrderDate}</p><p><strong>Estimated Delivery:</strong> ${formattedDeliveryDate}</p><hr><h2 style="color: #333;">Order Summary</h2><table style="width: 100%; border-collapse: collapse;">${itemsHtml}<tr style="font-weight: bold;"><td style="padding: 10px;">Total</td><td style="padding: 10px; text-align: right;">₹${(order.totalAmount || 0).toFixed(2)}</td></tr></table><hr><p><strong>Shipping Address:</strong><br>${addressHtml}</p></div>`;
                 
-            await transporter.sendMail({
-                from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
+            await sendMail({
                 to: user.email,
                 subject: `Your NexusMarket Order Confirmation #${order.orderId}`,
                 html: emailHtml
@@ -935,8 +935,7 @@ app.put('/api/user/orders/cancel', async (req, res) => {
         if (orderToCancel.confirmationEmail) {
             try {
                 const canceledItemsHtml = orderToCancel.items.map(item => `<li>${item.name} (Qty: ${item.quantity})</li>`).join('');
-                await transporter.sendMail({
-                    from: `"NexusMarket" <${process.env.EMAIL_USER}>`, 
+                await sendMail({
                     to: orderToCancel.confirmationEmail,
                     subject: `Your NexusMarket Order #${orderId} has been cancelled`,
                     html: `<div style="font-family: sans-serif;"><p>Hi ${userWithOrder.name}, this is a confirmation that your order <b>#${orderId}</b> has been successfully cancelled.</p><p>The following items have been removed from your order:</p><ul>${canceledItemsHtml}</ul><p>Any payments made will be refunded according to our policy.</p></div>`
@@ -992,8 +991,7 @@ app.post('/api/user/returns/request-otp', async (req, res) => {
         );
 
         const emailHtml = `<p>Your One-Time Password (OTP) to confirm your return for <b>${itemToReturn.name}</b> is:</p><h1 style="font-size: 36px; letter-spacing: 5px;">${otp}</h1><p>This code does not expire.</p>`;
-        await transporter.sendMail({
-            from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
+        await sendMail({
             to: user.email,
             subject: `Your NexusMarket Return Verification Code`,
             html: emailHtml
@@ -1036,8 +1034,7 @@ app.post('/api/user/returns/finalize', async (req, res) => {
 
         const reason = itemToReturn.returnOTP.reason;
         const emailHtml = `<p>Hi ${user.name},</p><p>This email confirms that your return for <b>${itemToReturn.name}</b> has been successfully processed.</p><p><b>Reason provided:</b> ${reason}</p><p>Your refund will be processed shortly.</p>`;
-        await transporter.sendMail({
-            from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
+        await sendMail({
             to: user.email,
             subject: `Return Confirmed for "${itemToReturn.name}"`,
             html: emailHtml
@@ -1169,8 +1166,7 @@ app.post('/api/user/request-discount-code', async (req, res) => {
             { $set: { "cart.$.verification": { code: verificationCode } } }
         );
         
-        await transporter.sendMail({
-            from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
+        await sendMail({
             to: studentEmail,
             subject: 'Your NexusMarket Discount Code',
             html: `<p>Your verification code for the discount on <b>${productName}</b> is:</p><h1 style="font-size: 36px; letter-spacing: 5px;">${verificationCode}</h1><p>This code does not expire.</p>`
@@ -1368,8 +1364,7 @@ app.post('/api/user/contact-support', async (req, res) => {
 
         const emailHtml = `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 20px auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;"><div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;"><h1 style="margin: 0; font-size: 24px;">New Customer Support Ticket</h1></div><div style="padding: 20px;"><h2 style="color: #4f46e5; border-bottom: 2px solid #eee; padding-bottom: 10px;">User Information</h2><p><strong>Name:</strong> ${user.name}</p><p><strong>Email:</strong> ${user.email}</p><p><strong>Phone:</strong> ${user.phone}</p><p><em>(Click 'Reply' to respond directly to this user)</em></p><h2 style="color: #4f46e5; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;">Issue Details</h2><p><strong>Category:</strong> ${category}</p><p><strong>Message:</strong></p><div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border: 1px solid #eee;"><p style="margin: 0; white-space: pre-wrap;">${message}</p></div></div><div style="background-color: #f4f4f4; color: #777; padding: 15px; text-align: center; font-size: 12px;"><p>This is an automated message from the NexusMarket system.</p></div></div>`;
 
-        await transporter.sendMail({
-            from: `"NexusMarket System" <${process.env.EMAIL_USER}>`,
+        await sendMail({
             to: process.env.EMAIL_USER,
             replyTo: user.email,
             subject: `[Support Ticket] - ${category} from ${user.name}`,
