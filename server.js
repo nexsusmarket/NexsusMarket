@@ -9,7 +9,6 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 // --- 1. IMPORTS ---
 require('dotenv').config();
-const express = require('express');
 const cors = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt = require('bcrypt');
