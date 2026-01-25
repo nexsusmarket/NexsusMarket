@@ -19,7 +19,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 const PORT = process.env.PORT || 3000;
 
 const otpStore = {}; // In-memory store for signup OTPs
-
 // ALLOW Netlify and Localhost
 app.use(cors({
     origin: '*', // Allows all origins (easiest for local testing)
@@ -109,50 +108,63 @@ function calculateNameSimilarity(name1, name2) {
 // ============================================================
 //  👇 HYBRID ENGINE: NODE CALLS PYTHON 👇
 // ============================================================
-if (process.env.RENDER) {
-    console.log("⚠️ Skipping Python recommender on Render Free");
-    return Promise.resolve();
-}
+
 
 function generateAndSaveRecommendations(phone) {
+
+    // ✅ SAFELY skip Python on Render Free tier
+    if (process.env.RENDER) {
+        console.log("⚠️ Skipping Python recommender on Render Free");
+        return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
-        // 1. Define paths and arguments
-        const scriptPath = path.join(__dirname, 'recommender.py');
-        const productsPath = path.join(__dirname, 'public', 'javaScript', 'products.json');
-        const mongoUri = process.env.MONGO_URI;
+        try {
+            // 1. Define paths and arguments
+            const scriptPath = path.join(__dirname, 'recommender.py');
+            const productsPath = path.join(__dirname, 'public', 'javaScript', 'products.json');
+            const mongoUri = process.env.MONGO_URI;
 
-        console.log(`🧠 Spawning Python Script for user: ${phone}`);
+            console.log(`🧠 Spawning Python Script for user: ${phone}`);
 
-        // 2. Spawn Python Process
-        // Arguments matches your python code: [phone, products_file, mongo_uri]
-        // DETECT OS: If Windows, use 'python', otherwise use 'python3'
-        const pythonCommand = process.platform === "win32" ? "python" : "python3";
-        
-        console.log(`🧠 Spawning Python Script for user: ${phone} using command: ${pythonCommand}`);
+            // 2. Detect OS
+            const pythonCommand = process.platform === "win32" ? "python" : "python3";
+            console.log(`🧠 Using command: ${pythonCommand}`);
 
-        // Spawn Python Process with the correct command
-        const pythonProcess = spawn(pythonCommand, [scriptPath, phone, productsPath, mongoUri]);
-        // 3. Log Output
-        pythonProcess.stdout.on('data', (data) => {
-            console.log(`🐍 Python Output: ${data.toString().trim()}`);
-        });
+            // 3. Spawn Python process
+            const pythonProcess = spawn(
+                pythonCommand,
+                [scriptPath, phone, productsPath, mongoUri],
+                { stdio: ['ignore', 'pipe', 'pipe'] }
+            );
 
-        pythonProcess.stderr.on('data', (data) => {
-            console.error(`🐍 Python Error: ${data.toString().trim()}`);
-        });
+            // 4. Log stdout
+            pythonProcess.stdout.on('data', (data) => {
+                console.log(`🐍 Python Output: ${data.toString().trim()}`);
+            });
 
-        // 4. Handle Completion
-        pythonProcess.on('close', (code) => {
-            if (code === 0) {
-                console.log('✅ Python recommendation finished successfully.');
-                resolve();
-            } else {
-                console.error(`❌ Python script exited with code ${code}`);
-                resolve(); // Resolve anyway to keep server alive
-            }
-        });
+            // 5. Log stderr
+            pythonProcess.stderr.on('data', (data) => {
+                console.error(`🐍 Python Error: ${data.toString().trim()}`);
+            });
+
+            // 6. Handle completion
+            pythonProcess.on('close', (code) => {
+                if (code === 0) {
+                    console.log('✅ Python recommendation finished successfully.');
+                } else {
+                    console.error(`❌ Python script exited with code ${code}`);
+                }
+                resolve(); // ✅ Always resolve to keep server alive
+            });
+
+        } catch (err) {
+            console.error("❌ Failed to start Python recommender:", err);
+            resolve(); // ✅ Never crash server
+        }
     });
 }
+
 // ============================================================
 
 
