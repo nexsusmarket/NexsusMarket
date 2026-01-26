@@ -32,12 +32,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 3. Helper to Show/Hide Image State
     function setProfileImageState(hasImage, imageUrl = '') {
+        // Toggle Image vs Placeholder
         if (hasImage && imageUrl) {
             if (profileImg) {
                 profileImg.src = imageUrl;
                 profileImg.classList.remove('hidden');
             }
             if (placeholder) placeholder.classList.add('hidden');
+            
+            // SHOW Delete Button
             if (deleteBtn) deleteBtn.classList.remove('hidden');
         } else {
             if (profileImg) {
@@ -45,6 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 profileImg.classList.add('hidden');
             }
             if (placeholder) placeholder.classList.remove('hidden');
+            
+            // HIDE Delete Button
             if (deleteBtn) deleteBtn.classList.add('hidden');
         }
     }
@@ -71,18 +76,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Failed to load profile data:", error);
     }
 
-    // 5. Delete Button Logic (NO ALERT)
+    // 5. Delete Button Logic (NO ALERT, Instant Removal)
     if (deleteBtn) {
         deleteBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
+            e.stopPropagation(); // Prevent triggering the upload click
             try {
                 // Optimistic UI update: Remove it immediately from the screen
                 setProfileImageState(false);
+                
                 // Send request to backend
                 await deleteProfileImage();
+                console.log("Profile image deleted");
             } catch (err) {
                 console.error("Failed to remove image on server", err);
-                // Ideally show a small toast notification here if it fails
+                // Optional: Revert UI if server fails (advanced)
             }
         });
     }
@@ -121,31 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             fileInput.value = '';
         });
     }
-    function setProfileImageState(hasImage, imageUrl = '') {
-    const profileImg = document.getElementById('profile-image');
-    const placeholder = document.getElementById('profile-placeholder');
-    const deleteBtn = document.getElementById('delete-profile-btn');
 
-    if (hasImage && imageUrl) {
-        if (profileImg) {
-            profileImg.src = imageUrl;
-            profileImg.classList.remove('hidden');
-        }
-        if (placeholder) placeholder.classList.add('hidden');
-        
-        // Show delete button ONLY if there is an image
-        if (deleteBtn) deleteBtn.classList.remove('hidden');
-    } else {
-        if (profileImg) {
-            profileImg.src = '';
-            profileImg.classList.add('hidden');
-        }
-        if (placeholder) placeholder.classList.remove('hidden');
-        
-        // Hide delete button if no image
-        if (deleteBtn) deleteBtn.classList.add('hidden');
-    }
-    }
     // 7. Cropper Modal Actions
     function closeCropper() {
         cropperModal.classList.add('hidden');
