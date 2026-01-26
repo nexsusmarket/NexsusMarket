@@ -1,4 +1,4 @@
-// server.js
+// server
 // --- 1. IMPORTS ---
 require('dotenv').config();
 const axios = require('axios'); // <--- ADD THIS LINE
