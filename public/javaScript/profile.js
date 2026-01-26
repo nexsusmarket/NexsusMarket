@@ -121,7 +121,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             fileInput.value = '';
         });
     }
+    function setProfileImageState(hasImage, imageUrl = '') {
+    const profileImg = document.getElementById('profile-image');
+    const placeholder = document.getElementById('profile-placeholder');
+    const deleteBtn = document.getElementById('delete-profile-btn');
 
+    if (hasImage && imageUrl) {
+        if (profileImg) {
+            profileImg.src = imageUrl;
+            profileImg.classList.remove('hidden');
+        }
+        if (placeholder) placeholder.classList.add('hidden');
+        
+        // Show delete button ONLY if there is an image
+        if (deleteBtn) deleteBtn.classList.remove('hidden');
+    } else {
+        if (profileImg) {
+            profileImg.src = '';
+            profileImg.classList.add('hidden');
+        }
+        if (placeholder) placeholder.classList.remove('hidden');
+        
+        // Hide delete button if no image
+        if (deleteBtn) deleteBtn.classList.add('hidden');
+    }
+    }
     // 7. Cropper Modal Actions
     function closeCropper() {
         cropperModal.classList.add('hidden');
