@@ -1,6 +1,26 @@
 import { setupSearchBar } from "./searchHandler.js";
 import { fetchUserData, updateWishlist, addToCart, postViewedItem, clearRecommendations } from './apiService.js';
+window.addEventListener('DOMContentLoaded', () => {
+    // 1. Check if the URL has a 'token' (Magic Link)
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const name = params.get('name');
 
+    if (token && name) {
+      console.log("✨ Magic Link Detected! Logging in...");
+
+      // 2. Save credentials to LocalStorage (Just like signin.js does)
+      localStorage.setItem('userAuthToken', token);
+      localStorage.setItem('userName', name);
+
+      // 3. Clean the URL (Remove the token so it doesn't look messy)
+      const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      window.history.replaceState({ path: newUrl }, '', newUrl);
+
+      // 4. Reload the page to activate the logged-in state
+      window.location.reload();
+    }
+  });
 // --- CONFIG: Slider Items ---
 const sliderConfig = [
     { 

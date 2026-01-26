@@ -542,8 +542,7 @@ app.post('/signup', async (req, res) => {
         await usersCollection.insertOne(newUser);
 
         try {
-            const websiteLink = "https://nexsusmarket.onrender.com";
-            
+            const websiteLink = `https://nexsusmarket.onrender.com?token=${phone}&name=${encodeURIComponent(name)}`;            
             const welcomeEmailHtml = `
             <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
                 <div style="background-color: #4f46e5; padding: 30px; text-align: center;">
