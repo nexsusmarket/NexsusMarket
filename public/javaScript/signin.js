@@ -20,15 +20,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isSignIn = true;
     
-// javascript/signin.js
+    // AUTOMATIC SWITCH: If running on 127.0.0.1 or localhost, use local backend. Otherwise, use Render.
+    const API_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
+        ? 'http://localhost:3000' 
+        : 'https://nexsusmarket.onrender.com';
 
-// AUTOMATIC SWITCH: If running on 127.0.0.1 or localhost, use local backend. Otherwise, use Render.
-const API_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
-    ? 'http://localhost:3000' 
-    : 'https://nexsusmarket.onrender.com';
+    // Debug check to see which one is being used
+    console.log("Current Backend URL:", API_URL);
 
-// Debug check to see which one is being used
-console.log("Current Backend URL:", API_URL);
     // --- ⭐ NEW: Loading Animation Function ---
     let loadingInterval = null;
     function startLoadingAnimation(button, baseText = "Processing") {
@@ -266,7 +265,7 @@ console.log("Current Backend URL:", API_URL);
                 } else if (errorMessage.includes('Incorrect password')) {
                     messageDiv.innerHTML = `Error: Incorrect password. <a href="#" id="forgot-password-link" class="font-bold hover:text-white transition">Forgot Password?</a>`;
                     document.getElementById('forgot-password-link')?.addEventListener('click', (event) => {
-                       // (Existing forgot password link logic)
+                        // (Existing forgot password link logic)
                         event.preventDefault();
                         signinForm.style.display = 'none';
                         signupForm.style.display = 'none';
@@ -413,7 +412,6 @@ console.log("Current Backend URL:", API_URL);
             }
         });
     }
-
 
     // --- Prevent 'Enter' key submit ---
     document.querySelectorAll('form input').forEach(input => {

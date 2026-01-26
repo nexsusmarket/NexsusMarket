@@ -542,12 +542,41 @@ app.post('/signup', async (req, res) => {
         await usersCollection.insertOne(newUser);
 
         try {
-            const welcomeEmailHtml = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 8px; text-align: center; color: #333;"><h1 style="color: #4f46e5;">🎉 Welcome to NexusMarket, ${name}!</h1><p style="font-size: 16px;">Your account has been successfully created. We're thrilled to have you join our community.</p><p style="font-size: 16px;">You can now sign in using your credentials and start exploring thousands of products.</p></div>`;
+            const websiteLink = "https://nexsusmarket.onrender.com";
+            
+            const welcomeEmailHtml = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                <div style="background-color: #4f46e5; padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">🎉 Welcome to NexusMarket!</h1>
+                </div>
+                
+                <div style="padding: 30px; background-color: #ffffff; text-align: center;">
+                    <p style="font-size: 18px; color: #333; margin-bottom: 20px;">Hi <strong>${name}</strong>,</p>
+                    <p style="font-size: 16px; color: #555; line-height: 1.6;">
+                        Your account has been successfully created. We are thrilled to have you join our community!
+                    </p>
+                    <p style="font-size: 16px; color: #555;">
+                        You can now sign in and start exploring thousands of products.
+                    </p>
+
+                    <div style="margin-top: 30px; margin-bottom: 30px;">
+                        <a href="${websiteLink}" style="background-color: #4f46e5; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block;">Start Shopping Now</a>
+                    </div>
+                    
+                    <p style="font-size: 14px; color: #888; margin-top: 20px;">
+                        Or copy this link: <a href="${websiteLink}" style="color: #4f46e5;">${websiteLink}</a>
+                    </p>
+                </div>
+                
+                <div style="background-color: #f9fafb; padding: 15px; text-align: center; color: #999; font-size: 12px;">
+                    <p>© 2026 NexusMarket. All rights reserved.</p>
+                </div>
+            </div>`;
             
             await transporter.sendMail({
-                from: `"NexusMarket" <${process.env.EMAIL_USER}>`,
+                from: `"NexusMarket" <${process.env.SENDER_EMAIL}>`, // Uses your verifying email
                 to: email,
-                subject: 'Welcome to NexusMarket! Your Account is Ready.',
+                subject: 'Welcome to NexusMarket! Your Account is Ready 🚀',
                 html: welcomeEmailHtml
             });
             console.log(`✅ Welcome email sent successfully to ${email}`);
