@@ -5,23 +5,38 @@
     <lastmod>2026-01-26</lastmod>
     <priority>1.00</priority>
   </url>
-
   <url>
     <loc>https://nexsusmarket.onrender.com/index.html</loc>
     <lastmod>2026-01-26</lastmod>
-    <priority>0.80</priority>
+    <priority>1.00</priority>
   </url>
+
   <url>
     <loc>https://nexsusmarket.onrender.com/topDeals.html</loc>
     <lastmod>2026-01-26</lastmod>
-    <priority>0.80</priority>
+    <priority>0.90</priority>
   </url>
   <url>
-    <loc>https://nexsusmarket.onrender.com/signin.html</loc>
+    <loc>https://nexsusmarket.onrender.com/allTrending.html</loc>
     <lastmod>2026-01-26</lastmod>
-    <priority>0.60</priority>
+    <priority>0.90</priority>
   </url>
-  
+  <url>
+    <loc>https://nexsusmarket.onrender.com/explore.html</loc>
+    <lastmod>2026-01-26</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nexsusmarket.onrender.com/brand.html</loc>
+    <lastmod>2026-01-26</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nexsusmarket.onrender.com/search.html</loc>
+    <lastmod>2026-01-26</lastmod>
+    <priority>0.70</priority>
+  </url>
+
   <url>
     <loc>https://nexsusmarket.onrender.com/category.html?category=mobile</loc>
     <lastmod>2026-01-26</lastmod>
@@ -54,7 +69,28 @@
   </url>
 
   <url>
+    <loc>https://nexsusmarket.onrender.com/customer-service.html</loc>
+    <lastmod>2026-01-26</lastmod>
+    <priority>0.60</priority>
+  </url>
+
+  <url>
+    <loc>https://nexsusmarket.onrender.com/signin.html</loc>
+    <lastmod>2026-01-26</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
     <loc>https://nexsusmarket.onrender.com/profile.html</loc>
+    <lastmod>2026-01-26</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://nexsusmarket.onrender.com/address.html</loc>
+    <lastmod>2026-01-26</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://nexsusmarket.onrender.com/wishlist.html</loc>
     <lastmod>2026-01-26</lastmod>
     <priority>0.50</priority>
   </url>
@@ -64,8 +100,18 @@
     <priority>0.50</priority>
   </url>
   <url>
-    <loc>https://nexsusmarket.onrender.com/wishlist.html</loc>
+    <loc>https://nexsusmarket.onrender.com/checkout.html</loc>
     <lastmod>2026-01-26</lastmod>
-    <priority>0.50</priority>
+    <priority>0.40</priority>
+  </url>
+  <url>
+    <loc>https://nexsusmarket.onrender.com/order.html</loc>
+    <lastmod>2026-01-26</lastmod>
+    <priority>0.40</priority>
+  </url>
+  <url>
+    <loc>https://nexsusmarket.onrender.com/delivered.html</loc>
+    <lastmod>2026-01-26</lastmod>
+    <priority>0.40</priority>
   </url>
 </urlset>
