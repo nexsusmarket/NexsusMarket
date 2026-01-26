@@ -10,12 +10,11 @@
     <style>
         /* --- Background Setup --- */
         body { 
-            /* Using the specific path you requested */
-            background-image: url('images/Login_image.jpg');
+            background-image: url('images/black-friday-sales-sign-neon-light.jpg'); /* Ensure this filename matches exactly */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-attachment: fixed; /* Parallax effect */
+            background-attachment: fixed;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -25,7 +24,7 @@
             position: relative;
         }
 
-        /* Dark overlay to ensure text readability regardless of image brightness */
+        /* --- Background Overlay (Adjusted for 80% Sharpness) --- */
         body::before {
             content: '';
             position: absolute;
@@ -33,42 +32,41 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.4); /* 40% darkness overlay */
-            backdrop-filter: blur(3px); /* Subtle blur to focus on the card */
+            /* Lighter overlay so image is brighter (20% darkness instead of 40%) */
+            background: rgba(0, 0, 0, 0.2); 
+            /* Removed blur here so the background image is sharp */
+            backdrop-filter: none; 
             z-index: 0;
         }
 
-        /* --- "Liquid Glass" Card Effect --- */
+        /* --- "Liquid Glass" Card Effect (More Transparent & Smaller) --- */
         .signin-container {
             position: relative;
             z-index: 10;
             width: 100%;
-            max-width: 450px;
-            padding: 3rem;
+            max-width: 420px; /* Slightly tighter width */
             
-            /* The Liquid Glass Magic */
-            background: rgba(20, 20, 20, 0.6); /* Dark semi-transparent base */
-            backdrop-filter: blur(20px) saturate(180%); /* Strong blur + vivid colors behind */
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            /* Reduced padding (top/bottom decreased significantly) */
+            padding: 2rem 2.5rem; 
             
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.125); /* Subtle white border */
+            /* High Transparency Settings */
+            background: rgba(0, 0, 0, 0.3); /* Very transparent dark tint */
             
-            /* Glossy top reflection */
+            /* Lower blur so you can see the bags behind it clearly */
+            backdrop-filter: blur(8px); 
+            -webkit-backdrop-filter: blur(8px);
+            
+            border-radius: 20px;
+            /* Stronger white border to define edges against the see-through glass */
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            
             box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.5), /* Deep shadow */
-                inset 0 0 0 1px rgba(255, 255, 255, 0.1); /* Inner rim light */
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
                 
             color: white;
             overflow: hidden;
             transition: transform 0.3s ease;
-        }
-
-        /* Subtle glow animation on the card */
-        .signin-container:hover {
-            box-shadow: 
-                0 30px 60px -12px rgba(0, 0, 0, 0.6),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
         }
 
         /* --- Typography --- */
@@ -76,13 +74,13 @@
             color: #ffffff;
             font-weight: 800;
             letter-spacing: -0.025em;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Text shadow helps readability on glass */
         }
         
         .signin-container p, 
         .signin-container span, 
         .signin-container label {
-            color: #94a3b8; /* Slate-400 */
+            color: #e2e8f0; /* Brighter text for better contrast against transparent bg */
         }
 
         .signin-container a {
@@ -92,50 +90,50 @@
         }
         
         .signin-container a:hover {
-            color: #c084fc; /* Purple-400 */
+            color: #c084fc;
         }
 
         /* --- Liquid Inputs --- */
         .input-group {
             position: relative;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1rem; /* Reduced margin between inputs */
         }
 
         .input-group input {
             width: 100%;
-            background: rgba(0, 0, 0, 0.3); /* Darker inner background */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 14px 16px 14px 48px; /* Left padding for icon */
+            /* More transparent input background */
+            background: rgba(255, 255, 255, 0.1); 
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px; /* Slightly smaller radius */
+            padding: 12px 16px 12px 48px; /* Slightly smaller padding */
             color: white;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             transition: all 0.3s ease;
             outline: none;
         }
 
         .input-group input::placeholder {
-            color: #64748b;
+            color: #cbd5e1;
         }
 
         .input-group input:focus {
-            background: rgba(0, 0, 0, 0.5);
-            border-color: #a855f7; /* Purple border on focus */
-            box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15); /* Purple glow ring */
+            background: rgba(0, 0, 0, 0.6); /* Darker on focus for readability */
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
         }
 
-        /* Icons inside inputs */
         .input-group .input-icon {
             position: absolute;
             left: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: #94a3b8;
-            font-size: 1.1rem;
+            color: #cbd5e1;
+            font-size: 1rem;
             transition: color 0.3s ease;
         }
 
         .input-group input:focus ~ .input-icon {
-            color: #a855f7; /* Icon lights up purple on focus */
+            color: #a855f7;
         }
 
         .input-group .toggle-password-icon {
@@ -143,7 +141,7 @@
             right: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: #64748b;
+            color: #cbd5e1;
             cursor: pointer;
             transition: color 0.2s;
         }
@@ -159,30 +157,26 @@
             color: white;
             font-weight: 600;
             letter-spacing: 0.5px;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 12px; /* Smaller padding */
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3); /* Purple glow shadow */
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
             text-transform: uppercase;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         button[type="submit"]:hover, #send-otp-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(124, 58, 237, 0.5);
+            box-shadow: 0 8px 25px rgba(124, 58, 237, 0.6);
             filter: brightness(1.1);
-        }
-
-        button[type="submit"]:active, #send-otp-btn:active {
-            transform: translateY(0);
         }
 
         button:disabled {
             background: #475569;
             cursor: not-allowed;
-            box-shadow: none;
             transform: none !important;
+            box-shadow: none;
         }
 
         /* --- Logo Animation --- */
@@ -196,19 +190,17 @@
 <body>
 
     <div class="signin-container">
-        <div class="text-center mb-8">
-            <a href="index.html" class="inline-flex items-center justify-center space-x-3 mb-4 group">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <i class="fas fa-atom text-white text-xl logo-spin"></i>
+        <div class="text-center mb-6"> <a href="index.html" class="inline-flex items-center justify-center space-x-2 mb-2 group">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-atom text-white text-lg logo-spin"></i>
                 </div>
-                <span class="text-2xl font-bold tracking-tight text-white drop-shadow-md">NexsusMarket</span>
+                <span class="text-xl font-bold tracking-tight text-white drop-shadow-md">NexsusMarket</span>
             </a>
-            <h2 id="form-title" class="text-3xl">Welcome Back</h2>
-            <p id="form-description" class="mt-2 text-base opacity-80">Please enter your details to sign in.</p>
+            <h2 id="form-title" class="text-2xl">Welcome Back</h2>
+            <p id="form-description" class="mt-1 text-sm opacity-90">Please enter your details to sign in.</p>
         </div>
 
-        <form id="signin-form" class="space-y-5">
-            <div class="input-group">
+        <form id="signin-form" class="space-y-4"> <div class="input-group">
                 <input id="signin-identifier" type="text" required placeholder="Mobile Number or Email">
                 <i class="fas fa-user input-icon"></i>
             </div>
@@ -218,19 +210,18 @@
                 <i class="fas fa-eye-slash toggle-password-icon"></i>
             </div>
             
-            <div class="flex items-center justify-between text-sm">
-                <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4 rounded border-gray-600 text-purple-600 focus:ring-purple-500 bg-gray-700">
+            <div class="flex items-center justify-between text-xs"> <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="w-3.5 h-3.5 rounded border-gray-500 text-purple-600 focus:ring-purple-500 bg-gray-800">
                     <span class="ml-2">Remember me</span>
                 </label>
-                <a href="#" id="forgot-password-link-main" class="text-purple-400 hover:text-purple-300 transition font-medium">Forgot Password?</a>
+                <a href="#" id="forgot-password-link-main" class="text-purple-300 hover:text-white transition font-medium">Forgot Password?</a>
             </div>
 
-            <button type="submit" class="w-full">Sign In</button>
+            <button type="submit" class="w-full mt-2">Sign In</button>
         </form>
 
-        <form id="signup-form" class="space-y-5" style="display: none;" novalidate>
-            <div id="signup-details-stage" class="space-y-5">
+        <form id="signup-form" class="space-y-4" style="display: none;" novalidate>
+            <div id="signup-details-stage" class="space-y-4">
                 <div class="input-group">
                     <input id="signup-name" type="text" required placeholder="Full Name">
                     <i class="fas fa-id-card input-icon"></i>
@@ -245,11 +236,11 @@
                         <i class="fas fa-envelope input-icon"></i>
                     </div>
                 </div>
-                <button type="button" id="send-otp-btn" class="w-full !bg-gray-700 hover:!bg-gray-600 !text-gray-200 !shadow-none border border-gray-600">Send Verification Code</button>
+                <button type="button" id="send-otp-btn" class="w-full !bg-gray-800/80 hover:!bg-gray-700 !text-gray-100 !shadow-none border border-gray-500">Send Code</button>
             </div>
 
-            <div id="signup-verification-stage" style="display: none;" class="space-y-5">
-                <div class="p-3 bg-purple-500/20 border border-purple-500/30 rounded-lg text-sm text-purple-200 text-center">
+            <div id="signup-verification-stage" style="display: none;" class="space-y-4">
+                <div class="p-2 bg-purple-500/20 border border-purple-500/30 rounded-lg text-xs text-purple-100 text-center">
                     Code sent to your email
                 </div>
                 <div class="input-group">
@@ -264,28 +255,28 @@
             </div>
 
             <div>
-                <button type="submit" id="create-account-btn" class="w-full" disabled>Create Account</button>
+                <button type="submit" id="create-account-btn" class="w-full mt-2" disabled>Create Account</button>
             </div>
         </form>
         
-        <form id="forgot-password-form" class="space-y-5" style="display: none;">
-            <div id="email-stage" class="space-y-5">
+        <form id="forgot-password-form" class="space-y-4" style="display: none;">
+            <div id="email-stage" class="space-y-4">
                 <div class="input-group">
                     <input id="forgot-email" type="email" required placeholder="Enter your registered email">
                     <i class="fas fa-envelope input-icon"></i>
                 </div>
-                <button type="submit" class="w-full">Send Reset Code</button>
+                <button type="submit" class="w-full mt-2">Send Reset Code</button>
             </div>
 
-            <div id="otp-verification-stage" style="display: none;" class="space-y-5">
+            <div id="otp-verification-stage" style="display: none;" class="space-y-4">
                  <div class="input-group">
                     <input id="forgot-otp" type="text" required placeholder="Enter 6-Digit Code">
                     <i class="fas fa-key input-icon"></i>
                 </div>
-                <button type="submit" class="w-full">Verify Code</button>
+                <button type="submit" class="w-full mt-2">Verify Code</button>
             </div>
 
-            <div id="new-password-stage" style="display: none;" class="space-y-5">
+            <div id="new-password-stage" style="display: none;" class="space-y-4">
                 <div class="input-group">
                     <input id="forgot-new-password" type="password" required minlength="6" placeholder="New Password">
                     <i class="fas fa-lock input-icon"></i>
@@ -296,16 +287,16 @@
                     <i class="fas fa-check-circle input-icon"></i>
                     <i class="fas fa-eye-slash toggle-password-icon"></i>
                 </div>
-                <button type="submit" class="w-full">Reset Password</button>
+                <button type="submit" class="w-full mt-2">Reset Password</button>
             </div>
         </form>
         
-        <div id="message" class="text-center text-sm font-semibold min-h-[20px] mt-4"></div>
+        <div id="message" class="text-center text-xs font-semibold min-h-[16px] mt-3"></div>
 
-        <div class="mt-8 pt-6 border-t border-gray-700/50 text-center">
-            <p id="toggle-container" class="text-sm text-gray-400">
+        <div class="mt-6 pt-4 border-t border-gray-500/30 text-center">
+            <p id="toggle-container" class="text-xs text-gray-300">
                 <span id="signin-toggle-text">Don't have an account?</span>
-                <a href="#" id="toggle-link" class="font-bold text-purple-400 hover:text-white ml-1 underline decoration-2 underline-offset-4">Sign Up</a>
+                <a href="#" id="toggle-link" class="font-bold text-purple-300 hover:text-white ml-1 underline decoration-2 underline-offset-4">Sign Up</a>
             </p>
         </div>
     </div>
