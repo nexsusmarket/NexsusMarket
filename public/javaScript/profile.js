@@ -15,7 +15,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const welcomeHeader = document.getElementById('profile-welcome-header');
     const profileImg = document.getElementById('profile-image');
     const placeholder = document.getElementById('profile-placeholder');
+    
+    // Toggle Buttons
     const deleteBtn = document.getElementById('delete-profile-btn');
+    const cameraBadge = document.getElementById('camera-badge');
     
     // Cropper Variables
     const fileInput = document.getElementById('profile-upload');
@@ -32,25 +35,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 3. Helper to Show/Hide Image State
     function setProfileImageState(hasImage, imageUrl = '') {
-        // Toggle Image vs Placeholder
         if (hasImage && imageUrl) {
+            // SHOW IMAGE
             if (profileImg) {
                 profileImg.src = imageUrl;
                 profileImg.classList.remove('hidden');
             }
             if (placeholder) placeholder.classList.add('hidden');
             
-            // SHOW Delete Button
+            // SHOW DELETE BTN, HIDE CAMERA
             if (deleteBtn) deleteBtn.classList.remove('hidden');
+            if (cameraBadge) cameraBadge.classList.add('hidden');
+
         } else {
+            // SHOW PLACEHOLDER
             if (profileImg) {
                 profileImg.src = '';
                 profileImg.classList.add('hidden');
             }
             if (placeholder) placeholder.classList.remove('hidden');
             
-            // HIDE Delete Button
+            // HIDE DELETE BTN, SHOW CAMERA
             if (deleteBtn) deleteBtn.classList.add('hidden');
+            if (cameraBadge) cameraBadge.classList.remove('hidden');
         }
     }
 
@@ -76,12 +83,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Failed to load profile data:", error);
     }
 
-    // 5. Delete Button Logic (NO ALERT, Instant Removal)
+    // 5. Delete Button Logic
     if (deleteBtn) {
         deleteBtn.addEventListener('click', async (e) => {
-            e.stopPropagation(); // Prevent triggering the upload click
+            e.stopPropagation(); // Stop click from triggering upload
             try {
-                // Optimistic UI update: Remove it immediately from the screen
+                // Optimistic UI update: Remove it immediately
                 setProfileImageState(false);
                 
                 // Send request to backend
@@ -89,7 +96,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log("Profile image deleted");
             } catch (err) {
                 console.error("Failed to remove image on server", err);
-                // Optional: Revert UI if server fails (advanced)
             }
         });
     }
@@ -102,29 +108,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const reader = new FileReader();
             reader.onload = function(event) {
-                // 1. Open Modal with the selected image
                 imageToCrop.src = event.target.result;
                 cropperModal.classList.remove('hidden');
 
-                // 2. Initialize Cropper (Destroy previous instance if exists)
                 if (cropper) {
                     cropper.destroy();
                 }
                 
-                // Wait slightly for image to load in DOM
                 setTimeout(() => {
                     cropper = new Cropper(imageToCrop, {
-                        aspectRatio: 1, // Force square crop
-                        viewMode: 1,    // Restrict crop box to image size
-                        dragMode: 'move', // Allow moving the image
+                        aspectRatio: 1, 
+                        viewMode: 1,    
+                        dragMode: 'move', 
                         autoCropArea: 1,
                         background: false
                     });
                 }, 100);
             };
             reader.readAsDataURL(file);
-            
-            // Reset input value so same file can be selected again if needed
             fileInput.value = '';
         });
     }
@@ -145,23 +146,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveCropBtn.addEventListener('click', async () => {
             if (!cropper) return;
 
-            // 1. Get cropped canvas
             const canvas = cropper.getCroppedCanvas({
-                width: 500,  // Resize to reasonable dimension
+                width: 500,  
                 height: 500,
                 fillColor: '#fff',
                 imageSmoothingEnabled: true,
                 imageSmoothingQuality: 'high',
             });
 
-            // 2. Convert to Base64 (JPEG compressed)
             const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
 
-            // 3. Update UI Immediately
             setProfileImageState(true, compressedBase64);
             closeCropper();
 
-            // 4. Send to Database
             try {
                 await updateProfileImage(compressedBase64);
                 console.log("Updated profile image successfully");
