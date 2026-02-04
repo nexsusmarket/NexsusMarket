@@ -9,6 +9,7 @@
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <link rel="stylesheet" href="styles/ass.css">
+        <link rel="stylesheet" href="styles/ai.css">
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZYGSQ9NCC6"></script>
         <script>
             window.dataLayer =  window.dataLayer || [];
@@ -232,8 +233,31 @@
                 </div>
             </div>
         </div>
-        
+        <div id="nex-trigger" class="nex-trigger-btn" title="Ask NEX AI">
+            <i class="fas fa-microphone text-2xl text-indigo-600"></i>
+        </div>
+
+        <div id="nex-overlay" class="ai-overlay">
+            <button id="nex-close" class="close-ai-btn"><i class="fas fa-times"></i></button>
+            
+            <div class="ai-interface">
+                <div id="ai-blob" class="liquid-blob ai-blob-left"></div>
+
+                <div class="ai-status-text">
+                    <h2 id="nex-status">Tell "Hey NEX"</h2>
+                    <p id="nex-subtitle">I am ready to help you...</p>
+                </div>
+
+                <div id="user-blob" class="liquid-blob user-blob-right"></div>
+            </div>
+        </div>
         <script type="module" src="javaScript/auth.js"></script>
         <script type="module" src="javaScript/index.js"></script>
+        <script type="module">
+        import { initNEX } from './javaScript/aiAssistant.js';
+            document.addEventListener('DOMContentLoaded', () => {
+            initNEX();
+        });
+        </script>
     </body>
     </html>
