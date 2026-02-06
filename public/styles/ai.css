@@ -108,6 +108,36 @@
 }
 .close-ai-btn:hover { transform: rotate(90deg); }
 
+/* --- NEW: Header AI Button Class --- */
+/* This keeps the button styling independent from other elements */
+.header-ai-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.5rem; 
+    cursor: pointer;
+    margin-right: 1.5rem; /* Space between AI and Account/Login */
+    transition: transform 0.2s ease, color 0.2s ease;
+    outline: none;
+}
+
+.header-ai-trigger:hover {
+    color: #fde047; /* Yellow-300 hover color */
+    transform: scale(1.1);
+}
+
+.header-ai-trigger i {
+    animation: pulse-slow 2s infinite;
+}
+
+@keyframes pulse-slow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
 /* Fluid Animation Keyframes */
 @keyframes morph {
     0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }

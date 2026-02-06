@@ -50,7 +50,6 @@ export function initNEX() {
     // --- UPDATED UI CONTROLS (Event Delegation) ---
     // This allows the button to work even though auth.js injects it later
     document.addEventListener('click', (e) => {
-        // Find the closest element with id="nex-trigger"
         const trigger = e.target.closest('#nex-trigger');
         if (trigger) {
             overlay.classList.add('active');
@@ -91,8 +90,7 @@ export function initNEX() {
     // --- RECOGNITION LOGIC ---
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript.toLowerCase().trim();
-        console.log("Heard:", transcript);
-
+        
         if (listeningForWakeWord) {
             if (transcript.includes('hey nex') || transcript.includes('next') || transcript.includes('hey next')) {
                 activateAssistant();
@@ -137,7 +135,7 @@ export function initNEX() {
         else if (command.includes('search for')) {
             const term = command.replace('search for', '').trim();
             speak(`Searching for ${term}`, () => {
-               // Implement search redirection here if needed
+               // Your existing search logic, or a simple alert for now
                console.log("Search triggered for:", term);
             });
         }
