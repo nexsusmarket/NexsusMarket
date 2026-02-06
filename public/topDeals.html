@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles/ass.css">
+    <link rel="stylesheet" href="styles/ai.css">
 </head>
 <body class="bg-gray-50 font-sans">
     
@@ -30,18 +31,6 @@
                 </div>  
                 
                 <nav id="main-navigation" class="flex items-center space-x-6">
-                    <a href="signin.html" class="hidden md:block hover:text-yellow-200 transition">
-                        <div class="text-xs opacity-75">Hello, Sign in</div>
-                        <div class="font-bold text-sm">Account</div>
-                    </a>
-                    <a href="wishlist.html" class="relative hover:text-yellow-200 transition">
-                        <i class="fas fa-heart text-xl"></i>
-                        <span class="wishlist-counter absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
-                    </a>
-                    <a href="cart.html" class="relative hover:text-yellow-200 transition">
-                        <i class="fas fa-shopping-cart text-xl"></i>
-                        <span class="cart-counter absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
-                    </a>
                 </nav>
             </div>
             
@@ -92,7 +81,25 @@
         </div>
     </div>
 
+    <div id="nex-overlay" class="ai-overlay">
+        <button id="nex-close" class="close-ai-btn"><i class="fas fa-times"></i></button>
+        <div class="ai-interface">
+            <div id="ai-blob" class="liquid-blob ai-blob-left"></div>
+            <div class="ai-status-text">
+                <h2 id="nex-status">Tell "Hey NEX"</h2>
+                <p id="nex-subtitle">I am ready to help you...</p>
+            </div>
+            <div id="user-blob" class="liquid-blob user-blob-right"></div>
+        </div>
+    </div>
+
     <script type="module" src="javaScript/auth.js"></script>
     <script type="module" src="javaScript/topDeals.js"></script>
+    <script type="module">
+        import { initNEX } from './javaScript/aiAssistant.js';
+        document.addEventListener('DOMContentLoaded', () => {
+            initNEX();
+        });
+    </script>
 </body>
 </html>

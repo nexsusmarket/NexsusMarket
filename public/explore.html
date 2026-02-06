@@ -4,6 +4,7 @@
         <title>All Products</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="stylesheet" href="styles/ass.css">
+        <link rel="stylesheet" href="styles/ai.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     </head>
     <body>
@@ -33,23 +34,6 @@
           </div> 
           
           <nav id="main-navigation" class="flex items-center space-x-6">
-              <a href="signin.html" class="hidden md:block hover:text-gray-200 transition nav-link">
-                  <div class="text-xs">Hello, Sign in</div>
-                  <div class="font-medium text-sm">Account</div>
-              </a>
-              
-              <a href="wishlist.html" class="relative hover:text-gray-200 transition nav-link">
-                  <i class="fas fa-heart text-2xl"></i>
-                  <span class="wishlist-counter absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
-              </a>
-              
-              <a href="cart.html" class="relative hover:text-gray-200 transition nav-link">
-                  <i class="fas fa-shopping-cart text-2xl"></i>
-                  <span class="cart-counter absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
-              </a>
-              <button class="md:hidden text-2xl">
-                  <i class="fas fa-bars"></i>
-              </button>
           </nav>
         </div>
 
@@ -79,8 +63,6 @@
     </header>
         <div>
             <div id="products-container" class="products-grid"></div>
-            <script type="module" src="javaScript/auth.js"></script>
-            <script type="module" src="javaScript/explore.js"></script>
         </div>
     <div id="login-prompt-modal" class="modal-overlay hidden">
       <div class="modal-content text-center max-w-md">
@@ -92,5 +74,26 @@
         </div>
     </div>
     </div>
+
+    <div id="nex-overlay" class="ai-overlay">
+        <button id="nex-close" class="close-ai-btn"><i class="fas fa-times"></i></button>
+        <div class="ai-interface">
+            <div id="ai-blob" class="liquid-blob ai-blob-left"></div>
+            <div class="ai-status-text">
+                <h2 id="nex-status">Tell "Hey NEX"</h2>
+                <p id="nex-subtitle">I am ready to help you...</p>
+            </div>
+            <div id="user-blob" class="liquid-blob user-blob-right"></div>
+        </div>
+    </div>
+
+    <script type="module" src="javaScript/auth.js"></script>
+    <script type="module" src="javaScript/explore.js"></script>
+    <script type="module">
+        import { initNEX } from './javaScript/aiAssistant.js';
+        document.addEventListener('DOMContentLoaded', () => {
+            initNEX();
+        });
+    </script>
     </body>
 </html>
