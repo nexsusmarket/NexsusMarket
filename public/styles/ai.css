@@ -1,13 +1,13 @@
 /* styles/ai.css */
 
-/* The Full Screen Overlay (Hidden by default) */
+/* The Full Screen Overlay */
 .ai-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100vh;
-    background: rgba(20, 20, 30, 0.85); /* Dark dim background */
+    background: rgba(20, 20, 30, 0.85);
     backdrop-filter: blur(15px);
     z-index: 9999;
     display: flex;
@@ -23,7 +23,7 @@
     pointer-events: all;
 }
 
-/* Container for the 3 elements: AI Blob, Text, User Blob */
+/* Interface Container */
 .ai-interface {
     display: flex;
     align-items: center;
@@ -33,47 +33,37 @@
     position: relative;
 }
 
-/* Common Liquid Glass Style */
+/* Liquid Blobs */
 .liquid-blob {
     width: 250px;
     height: 250px;
-    background: rgba(255, 255, 255, 0.15); /* White Liquid */
-    box-shadow: 
-        inset 0 0 20px rgba(255, 255, 255, 0.5),
-        0 0 30px rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 50%;
     transition: all 0.3s ease;
-    opacity: 0.3; /* Dim when not active */
+    opacity: 0.3;
 }
 
-/* Left: AI Speaking Visualizer */
-.ai-blob-left {
-    animation: morph 6s ease-in-out infinite;
-}
+.ai-blob-left { animation: morph 6s ease-in-out infinite; }
+.user-blob-right { animation: morph 6s ease-in-out infinite reverse; }
 
-/* Right: User Speaking Visualizer */
-.user-blob-right {
-    animation: morph 6s ease-in-out infinite reverse;
-}
-
-/* Active State (When talking/listening) */
 .liquid-blob.talking {
     opacity: 1;
     background: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 50px rgba(79, 70, 229, 0.6); /* Indigo glow for AI */
+    box-shadow: 0 0 50px rgba(79, 70, 229, 0.6);
     animation: morph-fast 3s ease-in-out infinite;
 }
 
 .liquid-blob.listening {
     opacity: 1;
     background: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 50px rgba(239, 68, 68, 0.6); /* Red glow for User */
+    box-shadow: 0 0 50px rgba(239, 68, 68, 0.6);
     animation: morph-fast 3s ease-in-out infinite;
 }
 
-/* Center Text area */
+/* Text */
 .ai-status-text {
     text-align: center;
     color: white;
@@ -88,11 +78,7 @@
     margin-bottom: 10px;
 }
 
-.ai-status-text p {
-    font-size: 1.2rem;
-    color: #cbd5e1;
-    opacity: 0.8;
-}
+.ai-status-text p { font-size: 1.2rem; color: #cbd5e1; opacity: 0.8; }
 
 /* Close Button */
 .close-ai-btn {
@@ -108,8 +94,7 @@
 }
 .close-ai-btn:hover { transform: rotate(90deg); }
 
-/* --- NEW: Header AI Button Class --- */
-/* This keeps the button styling independent from other elements */
+/* --- HEADER ICON STYLE (This fixes your issue) --- */
 .header-ai-trigger {
     display: flex;
     align-items: center;
@@ -119,26 +104,23 @@
     color: white;
     font-size: 1.5rem; 
     cursor: pointer;
-    margin-right: 1.5rem; /* Space between AI and Account/Login */
+    margin-right: 1.5rem; 
     transition: transform 0.2s ease, color 0.2s ease;
     outline: none;
 }
 
 .header-ai-trigger:hover {
-    color: #fde047; /* Yellow-300 hover color */
+    color: #fde047; /* Yellow-300 */
     transform: scale(1.1);
 }
 
-.header-ai-trigger i {
-    animation: pulse-slow 2s infinite;
-}
+.header-ai-trigger i { animation: pulse-slow 2s infinite; }
 
 @keyframes pulse-slow {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
 }
 
-/* Fluid Animation Keyframes */
 @keyframes morph {
     0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
     50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }

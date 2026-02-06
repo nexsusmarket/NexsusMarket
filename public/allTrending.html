@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles/ass.css">
+    <link rel="stylesheet" href="styles/ai.css">
     </head>
     <body>
     <header class="gradient-bg text-white shadow-lg sticky-header">
@@ -26,7 +27,7 @@
                 </div> 
                 
                 <nav id="main-navigation" class="flex items-center space-x-6">
-                    </nav>
+                </nav>
             </div>
                 <div class="hidden md:flex items-center space-x-8 mt-4 pb-1 text-sm font-medium overflow-x-auto opacity-90">
                     <a href="category.html?category=electronics" class="nav-item hover:text-yellow-300 transition">Electronics</a>
@@ -137,7 +138,26 @@
         </div>
     </div>
 </section>
+
+    <div id="nex-overlay" class="ai-overlay">
+        <button id="nex-close" class="close-ai-btn"><i class="fas fa-times"></i></button>
+        <div class="ai-interface">
+            <div id="ai-blob" class="liquid-blob ai-blob-left"></div>
+            <div class="ai-status-text">
+                <h2 id="nex-status">Tell "Hey NEX"</h2>
+                <p id="nex-subtitle">I am ready to help you...</p>
+            </div>
+            <div id="user-blob" class="liquid-blob user-blob-right"></div>
+        </div>
+    </div>
+
     <script type="module" src="javaScript/auth.js"></script>
     <script type="module" src="javaScript/searchHandler.js"></script> 
+    <script type="module">
+        import { initNEX } from './javaScript/aiAssistant.js';
+        document.addEventListener('DOMContentLoaded', () => {
+            initNEX();
+        });
+    </script>
 </body>
 </html>
