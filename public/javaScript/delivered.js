@@ -5,7 +5,6 @@ const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.locatio
     ? 'http://localhost:3000'                  
     : 'https://nexsusmarket.onrender.com';    
 
-// ✅ FIX: Define these at the TOP so all functions can see them
 let allDeliveredItems = [];
 let currentReturnData = { itemId: null, reason: null };
 let currentReviewData = { itemId: null, category: null, productName: null };
@@ -78,7 +77,7 @@ function showToast(message, isError = false) {
     const toast = document.getElementById('toast-notification');
     if (!toast) return;
     toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${message}`;
-    toast.className = 'toast-show'; // Using the CSS class we added
+    toast.className = 'toast-show';
     toast.style.backgroundColor = isError ? '#EF4444' : '#2d3748';
     
     setTimeout(() => {
@@ -151,7 +150,6 @@ function convertNumberToWords(amount) {
 
 // --- 4. UI BUILDERS (Review & Invoice) ---
 
-// Fixed: Last dragged star is saved
 function buildReviewModal(productName) {
     const container = document.getElementById('review-ratings-container');
     
@@ -191,37 +189,30 @@ function buildReviewModal(productName) {
     };
 
     stars.forEach(star => {
-        // 1. TRACK DRAGGING (HOVER)
         star.addEventListener('mouseenter', function() {
             const val = this.dataset.val;
-            lastHovered = val; // Remember this number!
+            lastHovered = val;
             
-            // Unlock visuals so they follow mouse immediately
             starWidget.classList.remove('has-rating'); 
-            
             starWidget.setAttribute('data-score', val); 
             label.textContent = labels[val];
             label.className = `rating-label text-score-${val}`;
         });
 
-        // 2. CLICK (Optional now, since drag handles it too, but good for mobile)
         star.addEventListener('click', function() {
             const val = this.dataset.val;
             selectedRating = val;
             lastHovered = val;
             
-            // Update visual active state
             stars.forEach(s => s.classList.remove('active-star'));
             this.classList.add('active-star'); 
             starWidget.classList.add('has-rating');
         });
     });
 
-    // 3. MOUSE LEAVE - THE FIX
-    // When mouse leaves, we SAVE whatever star was last touched (lastHovered)
     starWidget.addEventListener('mouseleave', function() {
         if (lastHovered !== 0) {
-            selectedRating = lastHovered; // <--- This commits the drag as the final rating
+            selectedRating = lastHovered; 
         }
 
         if (selectedRating === 0) {
@@ -230,15 +221,12 @@ function buildReviewModal(productName) {
             label.textContent = "Rate this product";
             label.className = "rating-label text-gray-400";
         } else {
-            // Lock the visuals to the last dragged star
             starWidget.classList.add('has-rating');
             starWidget.setAttribute('data-score', selectedRating);
             label.textContent = labels[selectedRating];
             label.className = `rating-label text-score-${selectedRating}`;
             
-            // Ensure the correct star has the 'active-star' class
             stars.forEach(s => s.classList.remove('active-star'));
-            // Find the star that matches selectedRating
             const finalStar = starWidget.querySelector(`i[data-val="${selectedRating}"]`);
             if(finalStar) finalStar.classList.add('active-star');
         }
@@ -535,13 +523,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                         return `
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-6 transition hover:shadow-md">
-                            <div class="relative w-28 h-28 bg-gray-50 rounded-lg flex items-center justify-center p-2 flex-shrink-0 border border-gray-100">
+                            <a href="./detail.html?name=${encodeURIComponent(item.name)}" class="relative w-28 h-28 bg-gray-50 rounded-lg flex items-center justify-center p-2 flex-shrink-0 border border-gray-100 block hover:border-purple-400 transition cursor-pointer">
                                 <img src="${item.image}" alt="${item.name}" class="max-w-full max-h-full object-contain mix-blend-multiply">
-                            </div>
+                            </a>
                             <div class="flex-1 flex flex-col justify-between">
                                 <div>
                                     <div class="flex justify-between items-start">
-                                        <p class="font-bold text-lg text-gray-900 line-clamp-2">${item.name}</p>
+                                        <a href="./detail.html?name=${encodeURIComponent(item.name)}" class="font-bold text-lg text-gray-900 line-clamp-2 hover:text-purple-600 hover:underline transition-colors cursor-pointer">${item.name}</a>
                                     </div>
                                     <p class="text-sm text-green-700 font-semibold mt-2 flex items-center"><i class="fas fa-check-circle mr-2"></i>Delivered on ${formattedDate}</p>
                                 </div>
@@ -595,7 +583,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (target.closest('.write-review-btn')) {
             const button = target.closest('.write-review-btn');
             
-            // ✅ FIX: Now accessing Global variables
             currentReviewData.itemId = button.dataset.itemId;
             currentReviewData.category = button.dataset.category;
             currentReviewData.productName = button.dataset.productName;

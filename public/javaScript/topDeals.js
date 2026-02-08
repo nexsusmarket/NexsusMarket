@@ -41,46 +41,129 @@ function animateFlyTo(startEl, targetId, iconClass) {
     setTimeout(() => flyer.remove(), 800);
 }
 
-// --- HELPER: Generate Random Deals ---
-function generateDeals(allProducts) {
-    if (!allProducts || allProducts.length === 0) return [];
+// ==========================================
+//  CORE LOGIC: STABLE & TIMED DEALS
+// ==========================================
 
-    // 1. Shuffle Array
-    const shuffled = [...allProducts].sort(() => 0.5 - Math.random());
+// 1. Calculate a "Cycle ID" (Changes every 14 days)
+function getCurrentDealCycle() {
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const cycleDurationDays = 14; // Deals change every 2 weeks
+    const startTime = new Date('2024-01-01').getTime(); // Fixed start reference
+    const currentTime = new Date().getTime();
+    
+    // The current cycle number
+    const cycleId = Math.floor((currentTime - startTime) / (msPerDay * cycleDurationDays));
+    
+    // Calculate when this cycle ends
+    const nextCycleStart = startTime + ((cycleId + 1) * cycleDurationDays * msPerDay);
+    const endDate = new Date(nextCycleStart);
+    
+    return { cycleId, endDate };
+}
 
-    // 2. Take 15 items
-    const selectedItems = shuffled.slice(0, 15);
+// 2. Pseudo-Random Generator (Seeded)
+// This ensures that for the same "Seed" (CycleID), we get the exact same random numbers
+function seededRandom(seed) {
+    let t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+}
 
-    // 3. Apply Discounts & Dates
-    return selectedItems.map(product => {
-        // Generate a random discount between 15% and 40%
-        const discountPercent = Math.floor(Math.random() * (40 - 15 + 1)) + 15;
-        
-        // Calculate Deal Price (Lower than actual price in JSON)
-        const dealPrice = Math.floor(product.price * ((100 - discountPercent) / 100));
-        
-        // Fake MRP (Higher than JSON price to show big savings)
-        const fakeMRP = Math.floor(product.price * 1.2);
+// 3. Deterministic Shuffle
+function shuffleWithSeed(array, seed) {
+    let m = array.length, t, i;
+    // Clone array to avoid mutating original
+    let newArray = [...array]; 
 
-        // Date Logic: Current Date + 10 to 15 days
-        const today = new Date();
-        const daysToAdd = 10 + Math.floor(Math.random() * 6); // Min 10, Max 15
-        const endDate = new Date(today);
-        endDate.setDate(today.getDate() + daysToAdd);
+    while (m) {
+        // Generate a random index using our seed
+        // We increment seed by m to ensure randomness varies per index
+        let r = seededRandom(seed + m); 
+        i = Math.floor(r * m--);
 
-        return {
-            ...product,
-            dealPrice: dealPrice,
-            mrpPrice: fakeMRP,
-            discount: discountPercent,
-            endDate: endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-        };
-    });
+        t = newArray[m];
+        newArray[m] = newArray[i];
+        newArray[i] = t;
+    }
+    return newArray;
 }
 
 /**
- * Renders the products with the new Professional Card Design
+ * Generate Deals that stay consistent for 2 weeks
  */
+function generateStableDeals(allProducts) {
+    if (!allProducts || allProducts.length === 0) return [];
+
+    const { cycleId, endDate } = getCurrentDealCycle();
+    const formattedEndDate = endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+    // 1. Categorize Products
+    const productsByCategory = {};
+    allProducts.forEach(p => {
+        // Normalize category name (lowercase, trim)
+        const cat = (p.category || 'other').toLowerCase().trim();
+        if (!productsByCategory[cat]) productsByCategory[cat] = [];
+        productsByCategory[cat].push(p);
+    });
+
+    // 2. Define Limits per Category
+    // "Mobiles, laptops, electronics kept more offer"
+    const highPriorityCats = ['mobile', 'mobiles', 'laptop', 'laptops', 'electronics', 'electronic'];
+    const limitHigh = 20;
+    const limitNormal = 15;
+
+    let finalDeals = [];
+
+    // 3. Select items from each category deterministically
+    Object.keys(productsByCategory).forEach((cat, index) => {
+        // Create a specific seed for this category + current cycle
+        // ensuring different categories get shuffled differently
+        const categorySeed = cycleId + (index * 100); 
+        
+        // Shuffle this category's products consistently
+        const shuffledCat = shuffleWithSeed(productsByCategory[cat], categorySeed);
+        
+        // Determine how many to take
+        const isHighPriority = highPriorityCats.some(hp => cat.includes(hp));
+        const takeCount = isHighPriority ? limitHigh : limitNormal;
+
+        const selected = shuffledCat.slice(0, takeCount);
+
+        // Process pricing for these items
+        const processed = selected.map((product, pIndex) => {
+            // Use seed to determine discount so price stays same for the cycle
+            const priceSeed = categorySeed + pIndex; 
+            const rng = seededRandom(priceSeed); // 0 to 1
+
+            // Discount between 15% and 40%
+            const discountPercent = Math.floor(rng * (40 - 15 + 1)) + 15;
+            
+            const dealPrice = Math.floor(product.price * ((100 - discountPercent) / 100));
+            // MRP is fake higher price
+            const fakeMRP = Math.floor(product.price * 1.2); 
+
+            return {
+                ...product,
+                dealPrice: dealPrice,
+                mrpPrice: fakeMRP,
+                discount: discountPercent,
+                endDate: formattedEndDate // Same end date for all current deals
+            };
+        });
+
+        finalDeals = [...finalDeals, ...processed];
+    });
+
+    // 4. Final Shuffle of the mixed list so categories are mixed on screen
+    return shuffleWithSeed(finalDeals, cycleId);
+}
+
+// ==========================================
+//  UI RENDERING
+// ==========================================
+
 function renderTopDeals(dealItems, wishlist = [], cart = []) {
     const container = document.querySelector(".top-product-list");
     if (!container) return;
@@ -102,7 +185,6 @@ function renderTopDeals(dealItems, wishlist = [], cart = []) {
         const btnText = inCart ? "Go to Cart" : "Add to Cart";
         const btnIcon = inCart ? "fa-check" : "fa-shopping-cart";
 
-        // Store deal price in data attribute for click handler
         html += `
             <article class="deal-card group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full relative" 
                      data-name="${encodeURIComponent(item.name)}" 
@@ -113,8 +195,8 @@ function renderTopDeals(dealItems, wishlist = [], cart = []) {
                         -${item.discount}% OFF
                     </span>
 
-                    <span class="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-gray-900/80 text-white text-[10px] font-medium px-2 py-1 rounded-full shadow-sm z-10 backdrop-blur-sm flex items-center gap-1">
-                        <i class="fas fa-clock text-yellow-400"></i> Ends ${item.endDate}
+                    <span class="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-gray-900/80 text-white text-[10px] font-medium px-2 py-1 rounded-full shadow-sm z-10 backdrop-blur-sm flex items-center gap-1 whitespace-nowrap">
+                        <i class="fas fa-bolt text-yellow-400"></i> Ends ${item.endDate}
                     </span>
 
                     <button class="deal-wishlist-btn wishlist-btn absolute top-3 right-3 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-gray-400 hover:text-red-500 hover:scale-110 transition-all z-20">
@@ -144,9 +226,10 @@ function renderTopDeals(dealItems, wishlist = [], cart = []) {
     container.innerHTML = html;
 }
 
-/**
- * Handles clicks: Card -> Detail, Buttons -> Actions
- */
+// ==========================================
+//  EVENT LISTENERS
+// ==========================================
+
 function attachListeners(dealItems) {
     const container = document.querySelector(".top-product-list");
     if (!container) return;
@@ -160,11 +243,10 @@ function attachListeners(dealItems) {
         
         if (!itemData) return;
 
-        // Use Deal Price for adding to cart directly from this page
         const productPayload = {
             name: itemData.name,
             image: itemData.image,
-            price: itemData.dealPrice, // Important: Use the discounted price
+            price: itemData.dealPrice, 
             category: itemData.category
         };
 
@@ -196,7 +278,6 @@ function attachListeners(dealItems) {
         if (cartBtn) {
             e.stopPropagation();
             
-            // If already added, go to cart page
             if (cartBtn.classList.contains('added')) {
                 window.location.href = './cart.html';
                 return;
@@ -204,7 +285,6 @@ function attachListeners(dealItems) {
 
             if (!window.checkAuth()) return;
 
-            // Animate & Update UI
             animateFlyTo(cartBtn, 'header-cart-icon', 'fas fa-shopping-cart');
             cartBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
             
@@ -217,28 +297,29 @@ function attachListeners(dealItems) {
             return;
         }
 
-        // 3. Card Click -> Go to Detail WITH DEAL PRICE
+        // 3. Card Click -> Detail
         if (localStorage.getItem('userAuthToken')) {
             postViewedItem(productPayload);
         }
-        // 👇 THIS IS THE KEY CHANGE: Passing dealPrice in URL
         window.location.href = `./detail.html?name=${encodeURIComponent(productName)}&dealPrice=${itemData.dealPrice}`;
     });
 }
+
+// ==========================================
+//  INIT
+// ==========================================
 
 document.addEventListener("DOMContentLoaded", async () => {
     setupSearchBar();
     
     try {
-        // 1. Fetch Raw Products
         const response = await fetch('./javaScript/products.json');
         if (!response.ok) throw new Error("Failed to fetch products");
         const allProducts = await response.json();
 
-        // 2. Generate Random Deals
-        const randomDeals = generateDeals(allProducts);
+        // Use the new STABLE generator
+        const stableDeals = generateStableDeals(allProducts);
 
-        // 3. Get User Data for Wishlist/Cart status
         let wishlist = [];
         let cart = [];
         if (localStorage.getItem('userAuthToken')) {
@@ -251,12 +332,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             } catch (e) { console.error("User data fetch error", e); }
         }
 
-        // 4. Render
-        renderTopDeals(randomDeals, wishlist, cart);
-        attachListeners(randomDeals);
+        renderTopDeals(stableDeals, wishlist, cart);
+        attachListeners(stableDeals);
 
     } catch (error) {
         console.error("Top Deals Error:", error);
         document.querySelector(".top-product-list").innerHTML = `<div class="col-span-full text-center text-red-500">Failed to load top deals.</div>`;
     }
-});
+});d

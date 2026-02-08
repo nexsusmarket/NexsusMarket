@@ -1,5 +1,3 @@
-// javascript/signin.js
-
 import { fetchUserData, requestPasswordReset, verifyOtp, verifyOtpAndReset, sendSignupOtp, createAccount } from './apiService.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -25,16 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ? 'http://localhost:3000' 
         : 'https://nexsusmarket.onrender.com';
 
-    // Debug check to see which one is being used
-    console.log("Current Backend URL:", API_URL);
-
-    // --- ⭐ NEW: Loading Animation Function ---
+    // --- LOADING ANIMATION FUNCTIONS ---
     let loadingInterval = null;
     function startLoadingAnimation(button, baseText = "Processing") {
         let dotCount = 0;
-        if (loadingInterval) clearInterval(loadingInterval); // Clear previous interval
+        if (loadingInterval) clearInterval(loadingInterval);
         button.disabled = true;
-        // Store original text if it's not already stored
         if (!button.dataset.originalText) {
              button.dataset.originalText = button.textContent;
         }
@@ -49,23 +43,32 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(loadingInterval);
             loadingInterval = null;
         }
-         // Use provided restoreText, then originalText, then default if necessary
         button.textContent = restoreText || button.dataset.originalText || 'Submit';
         button.disabled = false;
-        // Clear stored original text after use
-        // delete button.dataset.originalText;
     }
-    // --- ⭐ END OF NEW FUNCTION ---
 
-    // --- PASSWORD VISIBILITY TOGGLE ---
+    // --- ⭐ FIXED: PASSWORD VISIBILITY TOGGLE ---
     document.querySelectorAll('.toggle-password-icon').forEach(icon => {
         icon.addEventListener('click', () => {
-            const passwordInput = icon.previousElementSibling;
-            if (passwordInput && passwordInput.tagName === 'INPUT') {
+            // Fix: Find the parent .input-group, then find the input inside it
+            // This works regardless of how many icons are next to the input
+            const inputGroup = icon.closest('.input-group');
+            const passwordInput = inputGroup.querySelector('input');
+            
+            if (passwordInput) {
                 const isPassword = passwordInput.type === 'password';
                 passwordInput.type = isPassword ? 'text' : 'password';
+                
+                // Toggle the eye icon classes
                 icon.classList.toggle('fa-eye-slash');
                 icon.classList.toggle('fa-eye');
+                
+                // Optional: Make the icon brighter when active (text mode)
+                if (!isPassword) {
+                    icon.style.color = '#ffffff';
+                } else {
+                    icon.style.color = ''; // Revert to CSS default
+                }
             }
         });
     });
@@ -101,13 +104,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         messageDiv.textContent = '';
 
-        // Stop any active loading animation when toggling forms
         if (loadingInterval) {
-            const loadingButton = document.querySelector('button[disabled]'); // Find potentially loading button
+            const loadingButton = document.querySelector('button[disabled]');
             if (loadingButton) {
-                stopLoadingAnimation(loadingButton); // Restore its original text
+                stopLoadingAnimation(loadingButton);
             } else {
-                 clearInterval(loadingInterval); // Fallback clear
+                 clearInterval(loadingInterval);
                  loadingInterval = null;
             }
         }
@@ -122,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const signupEmailInput = document.getElementById('signup-email');
 
     if (sendOtpBtn) {
-        sendOtpBtn.dataset.originalText = sendOtpBtn.textContent; // Store initial text
+        sendOtpBtn.dataset.originalText = sendOtpBtn.textContent;
         sendOtpBtn.addEventListener('click', async () => {
             const name = signupNameInput.value;
             const phone = signupPhoneInput.value;
@@ -140,12 +142,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             messageDiv.textContent = '';
-            startLoadingAnimation(sendOtpBtn, "Sending"); // ⭐ Start loading
+            startLoadingAnimation(sendOtpBtn, "Sending");
 
             try {
                 const data = await sendSignupOtp({ name, phone, email });
-                stopLoadingAnimation(sendOtpBtn, "Resend OTP"); // ⭐ Stop loading, set text to Resend
-                sendOtpBtn.dataset.originalText = "Resend OTP"; // Update stored original text
+                stopLoadingAnimation(sendOtpBtn, "Resend OTP");
+                sendOtpBtn.dataset.originalText = "Resend OTP";
                 messageDiv.textContent = data.message;
                 messageDiv.style.color = 'green';
 
@@ -156,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 signupEmailInput.disabled = true;
 
             } catch (error) {
-                stopLoadingAnimation(sendOtpBtn); // ⭐ Stop loading, restore original text
+                stopLoadingAnimation(sendOtpBtn);
                 messageDiv.textContent = `Error: ${error.message}`;
                 messageDiv.style.color = 'red';
             }
@@ -165,12 +167,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle the final account creation
     if (signupForm && createAccountBtn) {
-        createAccountBtn.dataset.originalText = createAccountBtn.textContent; // Store initial text
+        createAccountBtn.dataset.originalText = createAccountBtn.textContent;
         signupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-             // Allow submit only if not already loading
             if (createAccountBtn.disabled && loadingInterval) return;
-             if (createAccountBtn.disabled) return; // Prevent submit if button is disabled for other reasons
+             if (createAccountBtn.disabled) return;
 
             const name = signupNameInput.value;
             const phone = signupPhoneInput.value;
@@ -185,12 +186,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             messageDiv.textContent = '';
-            startLoadingAnimation(createAccountBtn, "Creating"); // ⭐ Start loading
+            startLoadingAnimation(createAccountBtn, "Creating");
 
             try {
                 const data = await createAccount({ name, phone, email, password, otp });
-                // Don't stop animation here, let redirect handle button state implicitly
-                // stopLoadingAnimation(createAccountBtn);
                 messageDiv.textContent = data.message + ' Please sign in.';
                 messageDiv.style.color = 'green';
 
@@ -200,13 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 signupPhoneInput.disabled = false;
                 signupEmailInput.disabled = false;
                 sendOtpBtn.disabled = false;
-                sendOtpBtn.textContent = 'Send OTP'; // Reset OTP button text
-                sendOtpBtn.dataset.originalText = 'Send OTP'; // Reset original text
+                sendOtpBtn.textContent = 'Send OTP';
+                sendOtpBtn.dataset.originalText = 'Send OTP';
                 createAccountBtn.disabled = true;
                 showSignInView();
 
             } catch (error) {
-                stopLoadingAnimation(createAccountBtn); // ⭐ Stop loading
+                stopLoadingAnimation(createAccountBtn);
                 messageDiv.textContent = `Error: ${error.message}`;
                 messageDiv.style.color = 'red';
             }
@@ -216,20 +215,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 2. HANDLE SIGN IN ---
     if (signinForm) {
         const signinButton = signinForm.querySelector('button[type="submit"]');
-        signinButton.dataset.originalText = signinButton.textContent; // Store initial text
+        signinButton.dataset.originalText = signinButton.textContent;
         signinForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // Allow submit only if not already loading
             if (signinButton.disabled && loadingInterval) return;
 
             const identifier = document.getElementById('signin-identifier').value;
             const password = document.getElementById('signin-password').value;
 
             messageDiv.textContent = '';
-            startLoadingAnimation(signinButton, "Signing In"); // ⭐ Start loading
+            startLoadingAnimation(signinButton, "Signing In");
 
             try {
-                // FIX: Updated to live backend URL
                 const response = await fetch(`${API_URL}/signin`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -249,14 +246,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('viewedProducts', JSON.stringify(userData.viewedItems || []));
                 localStorage.setItem('deliveryAddress', JSON.stringify(userData.address || {}));
 
-                // Stop loading animation before redirecting
                 stopLoadingAnimation(signinButton);
                 messageDiv.textContent = data.message + ' Redirecting...';
                 messageDiv.style.color = 'blue';
                 setTimeout(() => { window.location.href = './index.html'; }, 1000);
 
             } catch (error) {
-                stopLoadingAnimation(signinButton); // ⭐ Stop loading on error
+                stopLoadingAnimation(signinButton);
                 messageDiv.style.color = 'red';
                 const errorMessage = error.message;
 
@@ -265,7 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (errorMessage.includes('Incorrect password')) {
                     messageDiv.innerHTML = `Error: Incorrect password. <a href="#" id="forgot-password-link" class="font-bold hover:text-white transition">Forgot Password?</a>`;
                     document.getElementById('forgot-password-link')?.addEventListener('click', (event) => {
-                        // (Existing forgot password link logic)
                         event.preventDefault();
                         signinForm.style.display = 'none';
                         signupForm.style.display = 'none';
@@ -293,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 3. HANDLE FORGOT PASSWORD ---
     if (forgotPasswordForm) {
-        // Store original text for each button in the forgot password form
         const sendCodeButton = emailStage?.querySelector('button[type="submit"]');
         const verifyCodeButton = otpVerificationStage?.querySelector('button[type="submit"]');
         const resetPasswordButton = newPasswordStage?.querySelector('button[type="submit"]');
@@ -302,13 +296,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if(verifyCodeButton) verifyCodeButton.dataset.originalText = verifyCodeButton.textContent;
         if(resetPasswordButton) resetPasswordButton.dataset.originalText = resetPasswordButton.textContent;
 
-
         forgotPasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             messageDiv.textContent = '';
             messageDiv.style.color = 'blue';
 
-            // Find the currently active button
             let currentButton;
             let loadingText = "Processing";
 
@@ -323,16 +315,16 @@ document.addEventListener('DOMContentLoaded', () => {
                  loadingText = "Resetting";
             }
 
-            if (!currentButton || (currentButton.disabled && loadingInterval)) return; // Prevent if no button or loading
+            if (!currentButton || (currentButton.disabled && loadingInterval)) return;
 
-            startLoadingAnimation(currentButton, loadingText); // ⭐ Start loading
+            startLoadingAnimation(currentButton, loadingText);
 
             // --- Stage 1: Send Email for OTP ---
             if (emailStage.style.display !== 'none') {
                 const email = document.getElementById('forgot-email').value;
                 try {
                     const data = await requestPasswordReset(email);
-                    stopLoadingAnimation(currentButton); // ⭐ Stop loading
+                    stopLoadingAnimation(currentButton);
                     messageDiv.textContent = data.message;
                     messageDiv.style.color = 'green';
 
@@ -344,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     newPasswordStage.querySelectorAll('input, button').forEach(el => el.disabled = true);
                     formDescription.textContent = 'Enter the 6-digit code sent.';
                 } catch (error) {
-                    stopLoadingAnimation(currentButton); // ⭐ Stop loading
+                    stopLoadingAnimation(currentButton);
                     messageDiv.textContent = `Error: ${error.message}`;
                     messageDiv.style.color = 'red';
                 }
@@ -355,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const otp = document.getElementById('forgot-otp').value;
                 try {
                     await verifyOtp(email, otp);
-                    stopLoadingAnimation(currentButton); // ⭐ Stop loading
+                    stopLoadingAnimation(currentButton);
                     messageDiv.textContent = 'Code verified. Set new password.';
                     messageDiv.style.color = 'green';
 
@@ -365,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     newPasswordStage.querySelectorAll('input, button').forEach(el => el.disabled = false);
                     formDescription.textContent = 'Create a new password.';
                 } catch (error) {
-                    stopLoadingAnimation(currentButton); // ⭐ Stop loading
+                    stopLoadingAnimation(currentButton);
                     messageDiv.textContent = `Error: ${error.message}`;
                     messageDiv.style.color = 'red';
                 }
@@ -378,13 +370,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const confirmPassword = document.getElementById('forgot-confirm-password').value;
 
                 if (newPassword !== confirmPassword) {
-                    stopLoadingAnimation(currentButton); // Stop loading before showing error
+                    stopLoadingAnimation(currentButton);
                     messageDiv.textContent = "Passwords do not match.";
                     messageDiv.style.color = 'red';
                     return;
                 }
                 if (newPassword.length < 6) {
-                    stopLoadingAnimation(currentButton); // Stop loading before showing error
+                    stopLoadingAnimation(currentButton);
                     messageDiv.textContent = 'Password min 6 characters.';
                     messageDiv.style.color = 'red';
                     return;
@@ -392,7 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 try {
                     const data = await verifyOtpAndReset({ email, otp, newPassword });
-                    // Don't stop animation, let redirect handle state
                     messageDiv.textContent = data.message;
                     messageDiv.style.color = 'green';
                     forgotPasswordForm.reset();
@@ -402,12 +393,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         messageDiv.style.color = 'green';
                     }, 2000);
                 } catch (error) {
-                    stopLoadingAnimation(currentButton); // ⭐ Stop loading
+                    stopLoadingAnimation(currentButton);
                     messageDiv.textContent = `Error: ${error.message}`;
                     messageDiv.style.color = 'red';
                 }
             } else {
-                 // Should not happen, but stop animation just in case
                  if(currentButton) stopLoadingAnimation(currentButton);
             }
         });
@@ -421,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const form = this.closest('form');
                 if (form) {
                     const submitButton = form.querySelector('button[type="submit"]:not([disabled])');
-                    if (submitButton && !loadingInterval) { // Only click if not loading
+                    if (submitButton && !loadingInterval) {
                         submitButton.click();
                     }
                 }

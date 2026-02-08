@@ -7,24 +7,22 @@ export function initNEX() {
     const aiBlob = document.getElementById('ai-blob');
     const userBlob = document.getElementById('user-blob');
     const closeBtn = document.getElementById('nex-close');
+    const langButtons = document.querySelectorAll('.liquid-btn');
 
     // Check Browser Support
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        console.warn("Voice Assistant not supported in this browser.");
-        return;
-    }
+    if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = false; 
-    recognition.lang = 'en-IN'; 
+    recognition.continuous = false;
+    recognition.lang = 'en-IN'; // Default
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
-    let isAwake = false; 
+    let isAwake = false;
     let listeningForWakeWord = false;
 
-    // --- SPEAKING FUNCTION ---
+    // --- SPEAK FUNCTION ---
     function speak(text, callback) {
         aiBlob.classList.add('talking');
         userBlob.classList.remove('listening');
@@ -32,11 +30,17 @@ export function initNEX() {
         statusSub.innerText = text;
 
         const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Dynamic Voice Selection based on Lang
         const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => v.name.includes('Google US English') || v.name.includes('Samantha'));
+        let langCode = recognition.lang.substring(0, 2); // 'en', 'hi', 'te'
+        
+        // Try to match voice to language, fallback to English
+        let preferredVoice = voices.find(v => v.lang.startsWith(langCode));
+        if(!preferredVoice) preferredVoice = voices.find(v => v.name.includes('Google US English') || v.name.includes('Samantha'));
+        
         if (preferredVoice) utterance.voice = preferredVoice;
-
-        utterance.rate = 1;
+        utterance.rate = 1; 
         utterance.pitch = 1;
 
         utterance.onend = () => {
@@ -47,11 +51,41 @@ export function initNEX() {
         window.speechSynthesis.speak(utterance);
     }
 
-    // --- UPDATED UI CONTROLS (Event Delegation) ---
-    // This allows the button to work even though auth.js injects it later
+    // --- LANGUAGE SWITCHER LOGIC ---
+    langButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // Remove active class from all
+            langButtons.forEach(b => b.classList.remove('active'));
+            // Add to clicked
+            e.target.classList.add('active');
+            
+            // Set Language
+            const selectedLang = e.target.getAttribute('data-lang');
+            recognition.lang = selectedLang;
+
+            // Stop current listening to reset with new language
+            recognition.stop();
+            isAwake = true; // Assume awake if they clicked a button
+            listeningForWakeWord = false;
+
+            // Feedback
+            if(selectedLang === 'hi-IN') speak("Namaste. Main ab Hindi mein sunungi.");
+            else if(selectedLang === 'te-IN') speak("Namaskaram. Ippudu nenu Telugu vintunnanu.");
+            else speak("Language switched to English.");
+
+            // Start listening for command immediately
+            setTimeout(() => {
+                statusTitle.innerText = "Listening...";
+                statusSub.innerText = "Say a command...";
+                userBlob.classList.add('listening');
+                try { recognition.start(); } catch(e) {}
+            }, 2000);
+        });
+    });
+
+    // --- TRIGGER ---
     document.addEventListener('click', (e) => {
-        const trigger = e.target.closest('#nex-trigger');
-        if (trigger) {
+        if (e.target.closest('#nex-trigger')) {
             overlay.classList.add('active');
             startListeningMode();
         }
@@ -65,14 +99,14 @@ export function initNEX() {
         });
     }
 
-    // --- LISTENING MODES ---
+    // --- MODES ---
     function startListeningMode() {
         isAwake = false;
         listeningForWakeWord = true;
         statusTitle.innerText = "Tell 'Hey NEX'";
         statusSub.innerText = "Listening for wake word...";
         aiBlob.classList.remove('talking');
-        userBlob.classList.add('listening'); 
+        userBlob.classList.add('listening');
         try { recognition.start(); } catch(e) {}
     }
 
@@ -81,23 +115,19 @@ export function initNEX() {
         listeningForWakeWord = false;
         speak("Hi, how can I help you?", () => {
             statusTitle.innerText = "Listening...";
-            statusSub.innerText = "Say a command (e.g., 'Open Deals')";
-            userBlob.classList.add('listening'); 
+            statusSub.innerText = "Say a command...";
+            userBlob.classList.add('listening');
             try { recognition.start(); } catch(e) {}
         });
     }
 
-    // --- RECOGNITION LOGIC ---
+    // --- RECOGNITION LOOP ---
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript.toLowerCase().trim();
         
         if (listeningForWakeWord) {
-            if (transcript.includes('hey nex') || transcript.includes('next') || transcript.includes('hey next')) {
-                activateAssistant();
-            } else {
-                statusSub.innerText = `Heard: "${transcript}". Try 'Hey NEX'`;
-                setTimeout(() => { try { recognition.start(); } catch(e) {} }, 1000);
-            }
+            if (transcript.includes('hey nex') || transcript.includes('next')) activateAssistant();
+            else setTimeout(() => { try { recognition.start(); } catch(e) {} }, 1000);
         } 
         else if (isAwake) {
             processCommand(transcript);
@@ -110,37 +140,13 @@ export function initNEX() {
         }
     };
 
-    // --- COMMAND PROCESSOR ---
     function processCommand(command) {
         userBlob.classList.remove('listening');
-        
-        if (command.includes('open deals') || command.includes('top deals')) {
-            speak("Opening Top Deals page.", () => window.location.href = 'topDeals.html');
-        } 
-        else if (command.includes('mobile') || command.includes('phone')) {
-            speak("Taking you to Mobiles.", () => window.location.href = 'category.html?category=mobile');
-        }
-        else if (command.includes('fashion') || command.includes('clothes')) {
-            speak("Opening Fashion section.", () => window.location.href = 'category.html?category=fashion');
-        }
-        else if (command.includes('cart')) {
-            speak("Opening your cart.", () => window.location.href = 'cart.html');
-        }
-        else if (command.includes('profile') || command.includes('account')) {
-            speak("Going to your profile.", () => window.location.href = 'profile.html');
-        }
-        else if (command.includes('home')) {
-            speak("Going back home.", () => window.location.href = 'index.html');
-        }
-        else if (command.includes('search for')) {
-            const term = command.replace('search for', '').trim();
-            speak(`Searching for ${term}`, () => {
-               // Your existing search logic, or a simple alert for now
-               console.log("Search triggered for:", term);
-            });
-        }
-        else {
-            speak("I didn't catch that.", () => { isAwake = true; });
-        }
+        // Simple command mapping
+        if (command.includes('deals')) speak("Opening Deals.", () => window.location.href = 'topDeals.html');
+        else if (command.includes('mobile')) speak("Opening Mobiles.", () => window.location.href = 'category.html?category=mobile');
+        else if (command.includes('cart')) speak("Opening Cart.", () => window.location.href = 'cart.html');
+        else if (command.includes('home')) speak("Going Home.", () => window.location.href = 'index.html');
+        else speak("I didn't catch that.", () => { isAwake = true; });
     }
 }
