@@ -235,24 +235,34 @@
     </div>
 
     <div id="nex-overlay" class="ai-overlay">
-        <button id="nex-close" class="close-ai-btn"><i class="fas fa-times"></i></button>
-        <div class="ai-interface">
-            <div id="ai-blob" class="liquid-blob ai-blob-left"></div>
+        
+        <div class="ai-glass-panel">
+            <button id="nex-close" class="close-ai-btn"><i class="fas fa-times"></i></button>
+            
+            <h2 class="ai-title">Select Language</h2>
 
-            <div class="ai-center-panel">
-                <div class="ai-status-text">s
-                    <h2 id="nex-status">Tell "Hey NEX"</h2>
-                    <p id="nex-subtitle">I am ready to help you...</p>
+            <div id="ai-lang-selection" class="ai-lang-grid">
+                <div class="lang-card" data-lang="en-IN">
+                    <span class="lang-icon">🇺🇸</span>
+                    <span class="lang-name">English</span>
                 </div>
-                
-                <div class="ai-language-options">
-                    <button class="liquid-btn active" data-lang="en-IN">English</button>
-                    <button class="liquid-btn" data-lang="te-IN">Telugu</button>
-                    <button class="liquid-btn" data-lang="hi-IN">Hindi</button>
+                <div class="lang-card" data-lang="te-IN">
+                    <span class="lang-icon">🇮🇳</span>
+                    <span class="lang-name">Telugu</span>
+                </div>
+                <div class="lang-card" data-lang="hi-IN">
+                    <span class="lang-icon">🇮🇳</span>
+                    <span class="lang-name">Hindi</span>
                 </div>
             </div>
 
-            <div id="user-blob" class="liquid-blob user-blob-right"></div>
+            <div id="ai-listening-ui" class="ai-listening-ui">
+                <div class="ai-mic-pulse">
+                    <i class="fas fa-microphone"></i>
+                </div>
+                <p id="ai-status-msg" class="ai-status-message">Initializing...</p>
+            </div>
+
         </div>
     </div>
 

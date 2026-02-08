@@ -1,21 +1,22 @@
 /* styles/ai.css */
 
-/* The Full Screen Overlay */
+/* --- 1. The Overlay --- */
 .ai-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100vh;
-    background: rgba(20, 20, 30, 0.85);
-    backdrop-filter: blur(15px);
+    background: rgba(10, 10, 20, 0.6); /* Slightly darker, more elegant dim */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     z-index: 9999;
     display: flex;
     justify-content: center;
     align-items: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.4s ease-in-out;
 }
 
 .ai-overlay.active {
@@ -23,196 +24,133 @@
     pointer-events: all;
 }
 
-/* Interface Container */
-.ai-interface {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 80%;
-    max-width: 1000px;
-    position: relative;
-}
-
-/* Liquid Blobs */
-.liquid-blob {
-    width: 250px;
-    height: 250px;
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    transition: all 0.3s ease;
-    opacity: 0.3;
-}
-
-.ai-blob-left { animation: morph 6s ease-in-out infinite; }
-.user-blob-right { animation: morph 6s ease-in-out infinite reverse; }
-
-.liquid-blob.talking {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 50px rgba(79, 70, 229, 0.6);
-    animation: morph-fast 3s ease-in-out infinite;
-}
-
-.liquid-blob.listening {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 50px rgba(239, 68, 68, 0.6);
-    animation: morph-fast 3s ease-in-out infinite;
-}
-
-/* Text */
-.ai-status-text {
+/* --- 2. The Main Glass Panel --- */
+.ai-glass-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border-radius: 24px;
+    padding: 3rem;
+    width: 90%;
+    max-width: 600px;
     text-align: center;
-    color: white;
+    transform: scale(0.95);
+    transition: transform 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ai-overlay.active .ai-glass-panel {
+    transform: scale(1);
+}
+
+/* --- 3. Typography --- */
+.ai-title {
     font-family: 'Inter', sans-serif;
-    z-index: 10;
-}
-
-.ai-status-text h2 {
-    font-size: 3rem;
+    font-size: 2rem;
     font-weight: 700;
-    text-shadow: 0 0 20px rgba(255,255,255,0.5);
-    margin-bottom: 10px;
+    color: white;
+    margin-bottom: 2.5rem;
+    letter-spacing: -0.5px;
+    background: linear-gradient(to right, #fff, #a5b4fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.ai-status-text p { font-size: 1.2rem; color: #cbd5e1; opacity: 0.8; }
+/* --- 4. Language Grid (The "Cards") --- */
+.ai-lang-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    width: 100%;
+}
 
-/* Close Button */
-.close-ai-btn {
-    position: absolute;
-    top: 30px;
-    right: 30px;
+.lang-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.lang-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.3);
+    border-color: rgba(165, 180, 252, 0.5);
+}
+
+.lang-card.active {
+    background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+    border-color: transparent;
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.6);
+}
+
+.lang-icon {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+.lang-name {
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* --- 5. Listening State (Hidden initially) --- */
+.ai-listening-ui {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+/* A Professional Single Pulse instead of blobs */
+.ai-mic-pulse {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #4f46e5, #a855f7);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     color: white;
     font-size: 2rem;
-    cursor: pointer;
-    background: none;
-    border: none;
-    transition: transform 0.3s;
-}
-.close-ai-btn:hover { transform: rotate(90deg); }
-
-/* --- HEADER ICON STYLE (This fixes your issue) --- */
-.header-ai-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    color: white;
-    font-size: 1.5rem; 
-    cursor: pointer;
-    margin-right: 1.5rem; 
-    transition: transform 0.2s ease, color 0.2s ease;
-    outline: none;
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+    animation: pulse-ring 2s infinite;
+    margin-bottom: 1.5rem;
 }
 
-.header-ai-trigger:hover {
-    color: #fde047; /* Yellow-300 */
-    transform: scale(1.1);
+.ai-status-message {
+    color: #e2e8f0;
+    font-size: 1.1rem;
+    font-weight: 500;
 }
 
-.header-ai-trigger i { animation: pulse-slow 2s infinite; }
-
-@keyframes pulse-slow {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+@keyframes pulse-ring {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(99, 102, 241, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
 }
 
-@keyframes morph {
-    0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-    50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
-    100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-}
-
-@keyframes morph-fast {
-    0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: scale(1); }
-    50% { border-radius: 40% 60% 70% 30% / 40% 40% 60% 50%; transform: scale(1.1); }
-    100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: scale(1); }
-}
-/* styles/ai.css */
-
-/* The Full Screen Overlay */
-.ai-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
-    background: rgba(20, 20, 30, 0.85); backdrop-filter: blur(15px);
-    z-index: 9999; display: flex; justify-content: center; align-items: center;
-    opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
-}
-.ai-overlay.active { opacity: 1; pointer-events: all; }
-
-/* Interface Container */
-.ai-interface { display: flex; align-items: center; justify-content: space-between; width: 80%; max-width: 1000px; position: relative; }
-
-/* Liquid Blobs */
-.liquid-blob {
-    width: 250px; height: 250px; background: rgba(255, 255, 255, 0.15);
-    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 50%; transition: all 0.3s ease; opacity: 0.3;
-}
-.ai-blob-left { animation: morph 6s ease-in-out infinite; }
-.user-blob-right { animation: morph 6s ease-in-out infinite reverse; }
-.liquid-blob.talking { opacity: 1; background: rgba(255, 255, 255, 0.3); box-shadow: 0 0 50px rgba(79, 70, 229, 0.6); animation: morph-fast 3s ease-in-out infinite; }
-.liquid-blob.listening { opacity: 1; background: rgba(255, 255, 255, 0.3); box-shadow: 0 0 50px rgba(239, 68, 68, 0.6); animation: morph-fast 3s ease-in-out infinite; }
-
-/* Center Text & Controls */
-.ai-center-panel {
-    display: flex; flex-direction: column; align-items: center; z-index: 10;
-}
-.ai-status-text { text-align: center; color: white; font-family: 'Inter', sans-serif; margin-bottom: 2rem; }
-.ai-status-text h2 { font-size: 3rem; font-weight: 700; text-shadow: 0 0 20px rgba(255,255,255,0.5); margin-bottom: 10px; }
-.ai-status-text p { font-size: 1.2rem; color: #cbd5e1; opacity: 0.8; }
-
-/* --- NEW: Liquid Glass Buttons (Horizontal) --- */
-.ai-language-options {
-    display: flex; gap: 1rem; margin-top: 1rem;
-}
-
-.liquid-btn {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.8);
-    padding: 10px 24px;
-    border-radius: 30px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    font-size: 0.9rem;
-    letter-spacing: 0.5px;
-}
-
-.liquid-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-2px);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
-    color: white;
-}
-
-.liquid-btn.active {
-    background: rgba(79, 70, 229, 0.6); /* Indigo Active State */
-    border-color: rgba(165, 180, 252, 0.5);
-    box-shadow: 0 0 20px rgba(79, 70, 229, 0.5);
-    color: white;
-}
-
-/* Close Button */
-.close-ai-btn { position: absolute; top: 30px; right: 30px; color: white; font-size: 2rem; cursor: pointer; background: none; border: none; transition: transform 0.3s; }
-.close-ai-btn:hover { transform: rotate(90deg); }
-
-/* Header Trigger */
+/* --- 6. Header Button (Small Icon) --- */
 .header-ai-trigger {
     display: flex; align-items: center; justify-content: center;
     background: transparent; border: none; color: white; font-size: 1.5rem; 
-    cursor: pointer; margin-right: 1.5rem; transition: transform 0.2s ease, color 0.2s ease; outline: none;
+    cursor: pointer; margin-right: 1.5rem; transition: transform 0.2s ease; outline: none;
 }
 .header-ai-trigger:hover { color: #fde047; transform: scale(1.1); }
-.header-ai-trigger i { animation: pulse-slow 2s infinite; }
 
-@keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-@keyframes morph { 0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; } 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } }
-@keyframes morph-fast { 0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: scale(1); } 50% { border-radius: 40% 60% 70% 30% / 40% 40% 60% 50%; transform: scale(1.1); } 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: scale(1); } }
+/* Close Button */
+.close-ai-btn {
+    position: absolute; top: 20px; right: 20px;
+    color: rgba(255,255,255,0.6); background: none; border: none;
+    font-size: 1.5rem; cursor: pointer; transition: color 0.3s;
+}
+.close-ai-btn:hover { color: white; }

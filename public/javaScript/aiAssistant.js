@@ -2,12 +2,11 @@
 
 export function initNEX() {
     const overlay = document.getElementById('nex-overlay');
-    const statusTitle = document.getElementById('nex-status');
-    const statusSub = document.getElementById('nex-subtitle');
-    const aiBlob = document.getElementById('ai-blob');
-    const userBlob = document.getElementById('user-blob');
     const closeBtn = document.getElementById('nex-close');
-    const langButtons = document.querySelectorAll('.liquid-btn');
+    const langGrid = document.getElementById('ai-lang-selection'); // The language cards
+    const listeningUI = document.getElementById('ai-listening-ui'); // The pulse UI
+    const statusText = document.getElementById('ai-status-msg');
+    const langButtons = document.querySelectorAll('.lang-card');
 
     // Check Browser Support
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -15,82 +14,23 @@ export function initNEX() {
 
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
-    recognition.lang = 'en-IN'; // Default
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
-    let isAwake = false;
-    let listeningForWakeWord = false;
+    let isListening = false;
 
-    // --- SPEAK FUNCTION ---
-    function speak(text, callback) {
-        aiBlob.classList.add('talking');
-        userBlob.classList.remove('listening');
-        statusTitle.innerText = "NEX is speaking...";
-        statusSub.innerText = text;
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        
-        // Dynamic Voice Selection based on Lang
-        const voices = window.speechSynthesis.getVoices();
-        let langCode = recognition.lang.substring(0, 2); // 'en', 'hi', 'te'
-        
-        // Try to match voice to language, fallback to English
-        let preferredVoice = voices.find(v => v.lang.startsWith(langCode));
-        if(!preferredVoice) preferredVoice = voices.find(v => v.name.includes('Google US English') || v.name.includes('Samantha'));
-        
-        if (preferredVoice) utterance.voice = preferredVoice;
-        utterance.rate = 1; 
-        utterance.pitch = 1;
-
-        utterance.onend = () => {
-            aiBlob.classList.remove('talking');
-            if (callback) callback();
-        };
-
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // --- LANGUAGE SWITCHER LOGIC ---
-    langButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            // Remove active class from all
-            langButtons.forEach(b => b.classList.remove('active'));
-            // Add to clicked
-            e.target.classList.add('active');
-            
-            // Set Language
-            const selectedLang = e.target.getAttribute('data-lang');
-            recognition.lang = selectedLang;
-
-            // Stop current listening to reset with new language
-            recognition.stop();
-            isAwake = true; // Assume awake if they clicked a button
-            listeningForWakeWord = false;
-
-            // Feedback
-            if(selectedLang === 'hi-IN') speak("Namaste. Main ab Hindi mein sunungi.");
-            else if(selectedLang === 'te-IN') speak("Namaskaram. Ippudu nenu Telugu vintunnanu.");
-            else speak("Language switched to English.");
-
-            // Start listening for command immediately
-            setTimeout(() => {
-                statusTitle.innerText = "Listening...";
-                statusSub.innerText = "Say a command...";
-                userBlob.classList.add('listening');
-                try { recognition.start(); } catch(e) {}
-            }, 2000);
-        });
-    });
-
-    // --- TRIGGER ---
+    // --- 1. Open AI (Show Language Menu) ---
     document.addEventListener('click', (e) => {
         if (e.target.closest('#nex-trigger')) {
             overlay.classList.add('active');
-            startListeningMode();
+            // Reset UI state
+            langGrid.style.display = 'grid';
+            listeningUI.style.display = 'none';
+            document.querySelector('.ai-title').innerText = "Select Language";
         }
     });
 
+    // --- 2. Close AI ---
     if(closeBtn) {
         closeBtn.addEventListener('click', () => {
             overlay.classList.remove('active');
@@ -99,54 +39,79 @@ export function initNEX() {
         });
     }
 
-    // --- MODES ---
-    function startListeningMode() {
-        isAwake = false;
-        listeningForWakeWord = true;
-        statusTitle.innerText = "Tell 'Hey NEX'";
-        statusSub.innerText = "Listening for wake word...";
-        aiBlob.classList.remove('talking');
-        userBlob.classList.add('listening');
-        try { recognition.start(); } catch(e) {}
-    }
+    // --- 3. Handle Language Selection ---
+    langButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // Get selected language
+            const selectedLang = e.currentTarget.getAttribute('data-lang');
+            const langName = e.currentTarget.querySelector('.lang-name').innerText;
+            
+            recognition.lang = selectedLang;
 
-    function activateAssistant() {
-        isAwake = true;
-        listeningForWakeWord = false;
-        speak("Hi, how can I help you?", () => {
-            statusTitle.innerText = "Listening...";
-            statusSub.innerText = "Say a command...";
-            userBlob.classList.add('listening');
-            try { recognition.start(); } catch(e) {}
+            // UI Transition: Hide Languages -> Show Listening
+            langGrid.style.display = 'none';
+            listeningUI.style.display = 'flex';
+            document.querySelector('.ai-title').innerText = "NEX AI";
+            statusText.innerText = `${langName} selected. Listening...`;
+
+            // Voice Feedback & Start Listening
+            const feedbackText = selectedLang === 'en-IN' ? "Hi, how can I help?" : 
+                                 selectedLang === 'hi-IN' ? "Namaste, boliye." : 
+                                 "Namaskaram, cheppandi.";
+            
+            speak(feedbackText, () => {
+                startListening();
+            });
         });
+    });
+
+    // --- 4. Core Functions ---
+    function speak(text, callback) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        const voices = window.speechSynthesis.getVoices();
+        // Try to match voice to lang
+        let preferredVoice = voices.find(v => v.lang.startsWith(recognition.lang.substring(0,2)));
+        if(preferredVoice) utterance.voice = preferredVoice;
+        
+        utterance.rate = 1;
+        utterance.onend = () => { if (callback) callback(); };
+        window.speechSynthesis.speak(utterance);
     }
 
-    // --- RECOGNITION LOOP ---
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.toLowerCase().trim();
-        
-        if (listeningForWakeWord) {
-            if (transcript.includes('hey nex') || transcript.includes('next')) activateAssistant();
-            else setTimeout(() => { try { recognition.start(); } catch(e) {} }, 1000);
-        } 
-        else if (isAwake) {
-            processCommand(transcript);
+    function startListening() {
+        try {
+            recognition.start();
+            statusText.innerText = "Listening...";
+        } catch(e) {
+            console.log("Mic already active");
         }
+    }
+
+    // --- 5. Recognition Results ---
+    recognition.onresult = (event) => {
+        const command = event.results[0][0].transcript.toLowerCase().trim();
+        statusText.innerText = `Processing: "${command}"`;
+        processCommand(command);
     };
 
     recognition.onend = () => {
+        // If still open and not speaking, maybe restart or go back to idle
         if (overlay.classList.contains('active') && !window.speechSynthesis.speaking) {
-            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 500);
+             statusText.innerText = "Tap mic to speak again.";
         }
     };
 
     function processCommand(command) {
-        userBlob.classList.remove('listening');
-        // Simple command mapping
-        if (command.includes('deals')) speak("Opening Deals.", () => window.location.href = 'topDeals.html');
-        else if (command.includes('mobile')) speak("Opening Mobiles.", () => window.location.href = 'category.html?category=mobile');
-        else if (command.includes('cart')) speak("Opening Cart.", () => window.location.href = 'cart.html');
-        else if (command.includes('home')) speak("Going Home.", () => window.location.href = 'index.html');
-        else speak("I didn't catch that.", () => { isAwake = true; });
+        // Simple navigation logic
+        if (command.includes('deal')) navigate('topDeals.html', "Opening Deals");
+        else if (command.includes('mobile')) navigate('category.html?category=mobile', "Opening Mobiles");
+        else if (command.includes('laptop')) navigate('category.html?category=laptop', "Opening Laptops");
+        else if (command.includes('cart')) navigate('cart.html', "Opening Cart");
+        else if (command.includes('home')) navigate('index.html', "Going Home");
+        else speak("Sorry, I didn't catch that.", () => startListening());
+    }
+
+    function navigate(url, speech) {
+        speak(speech, () => window.location.href = url);
     }
 }

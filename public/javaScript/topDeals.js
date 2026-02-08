@@ -63,7 +63,6 @@ function getCurrentDealCycle() {
 }
 
 // 2. Pseudo-Random Generator (Seeded)
-// This ensures that for the same "Seed" (CycleID), we get the exact same random numbers
 function seededRandom(seed) {
     let t = seed += 0x6D2B79F5;
     t = Math.imul(t ^ t >>> 15, t | 1);
@@ -74,12 +73,9 @@ function seededRandom(seed) {
 // 3. Deterministic Shuffle
 function shuffleWithSeed(array, seed) {
     let m = array.length, t, i;
-    // Clone array to avoid mutating original
     let newArray = [...array]; 
 
     while (m) {
-        // Generate a random index using our seed
-        // We increment seed by m to ensure randomness varies per index
         let r = seededRandom(seed + m); 
         i = Math.floor(r * m--);
 
@@ -91,7 +87,7 @@ function shuffleWithSeed(array, seed) {
 }
 
 /**
- * Generate Deals that stay consistent for 2 weeks
+ * Generate Deals: Total 20 items max (Mixed categories)
  */
 function generateStableDeals(allProducts) {
     if (!allProducts || allProducts.length === 0) return [];
@@ -99,65 +95,67 @@ function generateStableDeals(allProducts) {
     const { cycleId, endDate } = getCurrentDealCycle();
     const formattedEndDate = endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 
-    // 1. Categorize Products
-    const productsByCategory = {};
-    allProducts.forEach(p => {
-        // Normalize category name (lowercase, trim)
-        const cat = (p.category || 'other').toLowerCase().trim();
-        if (!productsByCategory[cat]) productsByCategory[cat] = [];
-        productsByCategory[cat].push(p);
-    });
-
-    // 2. Define Limits per Category
-    // "Mobiles, laptops, electronics kept more offer"
+    // 1. Separate High Priority vs Normal
     const highPriorityCats = ['mobile', 'mobiles', 'laptop', 'laptops', 'electronics', 'electronic'];
-    const limitHigh = 20;
-    const limitNormal = 15;
+    
+    const priorityItems = [];
+    const normalItems = [];
 
-    let finalDeals = [];
-
-    // 3. Select items from each category deterministically
-    Object.keys(productsByCategory).forEach((cat, index) => {
-        // Create a specific seed for this category + current cycle
-        // ensuring different categories get shuffled differently
-        const categorySeed = cycleId + (index * 100); 
-        
-        // Shuffle this category's products consistently
-        const shuffledCat = shuffleWithSeed(productsByCategory[cat], categorySeed);
-        
-        // Determine how many to take
-        const isHighPriority = highPriorityCats.some(hp => cat.includes(hp));
-        const takeCount = isHighPriority ? limitHigh : limitNormal;
-
-        const selected = shuffledCat.slice(0, takeCount);
-
-        // Process pricing for these items
-        const processed = selected.map((product, pIndex) => {
-            // Use seed to determine discount so price stays same for the cycle
-            const priceSeed = categorySeed + pIndex; 
-            const rng = seededRandom(priceSeed); // 0 to 1
-
-            // Discount between 15% and 40%
-            const discountPercent = Math.floor(rng * (40 - 15 + 1)) + 15;
-            
-            const dealPrice = Math.floor(product.price * ((100 - discountPercent) / 100));
-            // MRP is fake higher price
-            const fakeMRP = Math.floor(product.price * 1.2); 
-
-            return {
-                ...product,
-                dealPrice: dealPrice,
-                mrpPrice: fakeMRP,
-                discount: discountPercent,
-                endDate: formattedEndDate // Same end date for all current deals
-            };
-        });
-
-        finalDeals = [...finalDeals, ...processed];
+    allProducts.forEach(p => {
+        const cat = (p.category || 'other').toLowerCase().trim();
+        if (highPriorityCats.some(hp => cat.includes(hp))) {
+            priorityItems.push(p);
+        } else {
+            normalItems.push(p);
+        }
     });
 
-    // 4. Final Shuffle of the mixed list so categories are mixed on screen
-    return shuffleWithSeed(finalDeals, cycleId);
+    // 2. Shuffle both lists deterministically based on Cycle ID
+    const shuffledPriority = shuffleWithSeed(priorityItems, cycleId);
+    const shuffledNormal = shuffleWithSeed(normalItems, cycleId + 500); // Different seed offset
+
+    // 3. Select items to make a TOTAL of 20
+    // We want MORE priority items (e.g., 14 Priority + 6 Normal)
+    const takePriority = 14;
+    const takeNormal = 6;
+
+    const selectedPriority = shuffledPriority.slice(0, takePriority);
+    const selectedNormal = shuffledNormal.slice(0, takeNormal);
+
+    // Combine
+    let finalSelection = [...selectedPriority, ...selectedNormal];
+
+    // If we don't have enough priority items, fill with normal
+    if (finalSelection.length < 20) {
+        const remainingNeeded = 20 - finalSelection.length;
+        const extraNormal = shuffledNormal.slice(takeNormal, takeNormal + remainingNeeded);
+        finalSelection = [...finalSelection, ...extraNormal];
+    }
+
+    // 4. Shuffle the final mixed list so they don't appear in blocks
+    finalSelection = shuffleWithSeed(finalSelection, cycleId + 999);
+
+    // 5. Apply Discounts
+    return finalSelection.map((product, index) => {
+        // Use seed to determine discount so price stays same for the cycle
+        const priceSeed = cycleId + index; 
+        const rng = seededRandom(priceSeed); // 0 to 1
+
+        // Discount between 15% and 40%
+        const discountPercent = Math.floor(rng * (40 - 15 + 1)) + 15;
+        
+        const dealPrice = Math.floor(product.price * ((100 - discountPercent) / 100));
+        // MRP is fake higher price (20% higher than original real price)
+        const fakeMRP = Math.floor(product.price * 1.2); 
+
+        return {
+            ...product,
+            dealPrice: dealPrice,
+            mrpPrice: fakeMRP,
+            discount: discountPercent,
+            endDate: formattedEndDate
+        };
+    });
 }
 
 // ==========================================
@@ -317,7 +315,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!response.ok) throw new Error("Failed to fetch products");
         const allProducts = await response.json();
 
-        // Use the new STABLE generator
+        // Use the new STABLE generator with TOTAL LIMIT
         const stableDeals = generateStableDeals(allProducts);
 
         let wishlist = [];
@@ -339,4 +337,4 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("Top Deals Error:", error);
         document.querySelector(".top-product-list").innerHTML = `<div class="col-span-full text-center text-red-500">Failed to load top deals.</div>`;
     }
-});d
+});
