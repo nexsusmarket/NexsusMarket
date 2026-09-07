@@ -236,26 +236,34 @@
 
     <div id="nex-overlay" class="ai-overlay">
         
-        <div class="ai-interface">
+        <div class="ai-glass-panel">
             <button id="nex-close" class="close-ai-btn"><i class="fas fa-times"></i></button>
+            
+            <h2 class="ai-title">Select Language</h2>
 
-            <div id="ai-orb" class="ai-orb"></div>
-
-            <div id="ai-status-text" class="ai-status">Select Language</div>
-
-            <div id="ai-lang-container" class="ai-lang-container">
+            <div id="ai-lang-selection" class="ai-lang-grid">
                 <div class="lang-card" data-lang="en-IN">
-                    <span>🇬🇧</span> English
+                    <span class="lang-icon">🇺🇸</span>
+                    <span class="lang-name">English</span>
                 </div>
                 <div class="lang-card" data-lang="te-IN">
-                    <span>🇮🇳</span> Telugu
+                    <span class="lang-icon">🇮🇳</span>
+                    <span class="lang-name">Telugu</span>
                 </div>
                 <div class="lang-card" data-lang="hi-IN">
-                    <span>🇮🇳</span> Hindi
+                    <span class="lang-icon">🇮🇳</span>
+                    <span class="lang-name">Hindi</span>
                 </div>
             </div>
-        </div>
 
+            <div id="ai-listening-ui" class="ai-listening-ui">
+                <div class="ai-mic-pulse">
+                    <i class="fas fa-microphone"></i>
+                </div>
+                <p id="ai-status-msg" class="ai-status-message">Initializing...</p>
+            </div>
+
+        </div>
     </div>
 
     <script type="module" src="javaScript/auth.js"></script>
