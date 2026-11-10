@@ -122,17 +122,17 @@ export default function Navbar() {
                     <div id="account-menu" className="absolute right-0 account-dropdown-menu-glass z-50">
                       <div className="glass-background-blur"></div>
                       <div className="dropdown-content-layer">
-                        <div className="flex items-center space-x-3 px-4 py-3 border-b border-white/20 text-white">
+                        <div className="flex items-center space-x-3 px-4 py-3 border-b border-black/10 text-black">
                           {userData?.profileImage && (
                             <img
                               src={userData.profileImage}
                               alt="Profile"
-                              className="w-10 h-10 rounded-full object-cover border border-white/40 flex-shrink-0"
+                              className="w-10 h-10 rounded-full object-cover border border-black/20 flex-shrink-0"
                             />
                           )}
                           <div className="overflow-hidden">
-                            <p className="text-xs text-white opacity-90 leading-tight">Hello,</p>
-                            <p className="font-bold text-md truncate text-white leading-snug">{userName || 'User'}</p>
+                            <p className="text-xs text-black leading-tight">Hello,</p>
+                            <p className="font-bold text-md truncate text-black leading-snug">{userName || 'User'}</p>
                           </div>
                         </div>
                         <div className="py-1">
