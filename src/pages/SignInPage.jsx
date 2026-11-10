@@ -1,6 +1,6 @@
 // client/src/pages/SignInPage.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   signIn as apiSignIn, 
@@ -227,9 +227,13 @@ export default function SignInPage() {
       <div className="signin-container">
         {/* Header Icon & Title */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-500/20 text-purple-300 text-xl mb-2 border border-purple-500/30">
+          <Link
+            to="/"
+            title="Back to Home"
+            className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-500/20 text-purple-300 text-xl mb-2 border border-purple-500/30 hover:bg-purple-500/40 transition cursor-pointer"
+          >
             <i className="fas fa-atom logo-spin"></i>
-          </div>
+          </Link>
           <h2 id="form-title" className="text-2xl font-bold">
             {formTitle}
           </h2>

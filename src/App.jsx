@@ -1,6 +1,6 @@
 // client/src/App.jsx
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Toast from './components/Toast';
@@ -27,11 +27,14 @@ import ExplorePage from './pages/ExplorePage';
 import TopDealsPage from './pages/TopDealsPage';
 
 export default function App() {
-  return (
-    <div className="flex flex-col min-h-screen bg-gray-50 text-gray-800">
-      <Navbar />
+  const location = useLocation();
+  const isSignInPage = location.pathname.toLowerCase() === '/signin' || location.pathname.toLowerCase() === '/signin.html';
 
-      <main className="flex-1">
+  return (
+    <div className={isSignInPage ? '' : 'flex flex-col min-h-screen bg-gray-50 text-gray-800'}>
+      {!isSignInPage && <Navbar />}
+
+      <main className={isSignInPage ? '' : 'flex-1'}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/signin" element={<SignInPage />} />
@@ -110,10 +113,10 @@ export default function App() {
         </Routes>
       </main>
 
-      <Footer />
+      {!isSignInPage && <Footer />}
       <Toast />
-      <LoginPromptModal />
-      <AIAssistantModal />
+      {!isSignInPage && <LoginPromptModal />}
+      {!isSignInPage && <AIAssistantModal />}
     </div>
   );
 }
