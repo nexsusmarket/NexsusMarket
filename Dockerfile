@@ -1,5 +1,5 @@
 # 1. Use a base image that has both Node.js and Python pre-installed
-FROM nikolaik/python-nodejs:python3.10-nodejs18
+FROM nikolaik/python-nodejs:python3.10-nodejs20
 
 # 2. Set the working directory inside the server
 WORKDIR /usr/src/app
