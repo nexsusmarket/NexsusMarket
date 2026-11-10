@@ -6,7 +6,7 @@ import ProductCard from '../components/ProductCard';
 import productsData from '../data/products.json';
 
 export default function HomePage() {
-  const { userData, isLoggedIn, login, clearUserRecommendations } = useAuth();
+  const { userData, isLoggedIn, login, clearUserRecommendations, showToast } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
