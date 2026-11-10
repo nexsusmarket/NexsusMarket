@@ -15,8 +15,11 @@ RUN npm install
 # 5. Copy the rest of your application code
 COPY . .
 
-# 6. Expose the port your app runs on
+# 6. Build the React frontend
+RUN npm run build
+
+# 7. Expose the port your app runs on
 EXPOSE 3000
 
-# 7. Start the server
+# 8. Start the server
 CMD ["node", "server.js"]

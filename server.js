@@ -18,7 +18,11 @@ const cron = require('node-cron');
 // --- 2. APP INITIALIZATION & MIDDLEWARE ---
 const app = express();
 
-// --- [FIX PART 1] Serve all files from the 'public' folder ---
+// --- [FIX PART 1] Serve React build if available, fallback to 'public' folder ---
+const distPath = path.join(__dirname, 'dist');
+if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
+}
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
@@ -144,7 +148,9 @@ function generateAndSaveRecommendations(phone) {
     return new Promise((resolve, reject) => {
         // 1. Define paths and arguments
         const scriptPath = path.join(__dirname, 'recommender.py');
-        const productsPath = path.join(__dirname, 'public', 'javaScript', 'products.json');
+        const productsPath = fs.existsSync(path.join(__dirname, 'src', 'data', 'products.json'))
+            ? path.join(__dirname, 'src', 'data', 'products.json')
+            : path.join(__dirname, 'public', 'javaScript', 'products.json');
         const mongoUri = process.env.MONGO_URI;
 
         console.log(`🧠 Spawning Python Script for user: ${phone}`);
@@ -1446,7 +1452,10 @@ app.post('/api/user/contact-support', async (req, res) => {
 // --- [FIX PART 2] CATCH-ALL ROUTE (MUST BE LAST) ---
 // This ensures that any page visit that isn't an API call returns your website
 app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    if (fs.existsSync(path.join(distPath, 'index.html'))) {
+        return res.sendFile(path.join(distPath, 'index.html'));
+    }
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // -- 5. START SERVER --
