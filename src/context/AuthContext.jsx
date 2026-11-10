@@ -6,7 +6,10 @@ import {
   addToCart as apiAddToCart,
   updateCartQuantity as apiUpdateCartQuantity,
   removeFromCart as apiRemoveFromCart,
-  postViewedItem as apiPostViewedItem
+  postViewedItem as apiPostViewedItem,
+  clearRecommendations as apiClearRecommendations,
+  updateProfileImage as apiUpdateProfileImage,
+  deleteProfileImage as apiDeleteProfileImage
 } from '../api/apiService';
 
 const AuthContext = createContext(null);
@@ -133,6 +136,45 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const clearUserRecommendations = async () => {
+    if (!checkAuth()) return false;
+    try {
+      await apiClearRecommendations();
+      setUserData(prev => prev ? { ...prev, recommendations: [] } : prev);
+      showToast('Recommendations cleared');
+      return true;
+    } catch (err) {
+      showToast(err.message || 'Failed to clear recommendations', true);
+      return false;
+    }
+  };
+
+  const saveProfileImage = async (base64) => {
+    if (!checkAuth()) return false;
+    try {
+      await apiUpdateProfileImage(base64);
+      setUserData(prev => prev ? { ...prev, profileImage: base64 } : prev);
+      showToast('Profile photo updated successfully');
+      return true;
+    } catch (err) {
+      showToast(err.message || 'Failed to update profile photo', true);
+      return false;
+    }
+  };
+
+  const removeProfilePhoto = async () => {
+    if (!checkAuth()) return false;
+    try {
+      await apiDeleteProfileImage();
+      setUserData(prev => prev ? { ...prev, profileImage: null } : prev);
+      showToast('Profile photo removed');
+      return true;
+    } catch (err) {
+      showToast(err.message || 'Failed to remove photo', true);
+      return false;
+    }
+  };
+
   const wishlistCount = userData?.wishlist?.length || 0;
   const cartCount = userData?.cart?.length || 0;
 
@@ -154,6 +196,9 @@ export const AuthProvider = ({ children }) => {
       updateCartQty,
       removeFromCart,
       recordViewedItem,
+      clearUserRecommendations,
+      saveProfileImage,
+      removeProfilePhoto,
       loginModalOpen,
       setLoginModalOpen,
       toastInfo,

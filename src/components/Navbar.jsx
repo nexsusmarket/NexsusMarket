@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
-  const { isLoggedIn, userName, wishlistCount, cartCount, logout, setAiOverlayOpen } = useAuth();
+  const { isLoggedIn, userName, userData, wishlistCount, cartCount, logout, setAiOverlayOpen } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -106,7 +106,15 @@ export default function Navbar() {
                     }}
                     className="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-white/10 transition"
                   >
-                    <i className="fas fa-user-circle text-2xl"></i>
+                    {userData?.profileImage ? (
+                      <img
+                        src={userData.profileImage}
+                        alt="Profile"
+                        className="w-7 h-7 rounded-full object-cover border border-white/50"
+                      />
+                    ) : (
+                      <i className="fas fa-user-circle text-2xl"></i>
+                    )}
                     <span className="font-semibold text-sm">Account</span>
                   </div>
 
@@ -114,9 +122,18 @@ export default function Navbar() {
                     <div id="account-menu" className="absolute right-0 account-dropdown-menu-glass z-50">
                       <div className="glass-background-blur"></div>
                       <div className="dropdown-content-layer">
-                        <div className="px-4 py-3 border-b border-white/20">
-                          <p className="text-sm">Hello,</p>
-                          <p className="font-bold text-md truncate">{userName || 'User'}</p>
+                        <div className="flex items-center space-x-3 px-4 py-3 border-b border-white/20 text-white">
+                          {userData?.profileImage && (
+                            <img
+                              src={userData.profileImage}
+                              alt="Profile"
+                              className="w-10 h-10 rounded-full object-cover border border-white/40 flex-shrink-0"
+                            />
+                          )}
+                          <div className="overflow-hidden">
+                            <p className="text-xs text-white opacity-90 leading-tight">Hello,</p>
+                            <p className="font-bold text-md truncate text-white leading-snug">{userName || 'User'}</p>
+                          </div>
                         </div>
                         <div className="py-1">
                           <Link

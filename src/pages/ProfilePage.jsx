@@ -1,11 +1,27 @@
 // client/src/pages/ProfilePage.jsx
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProfilePage() {
-  const { userData, userName, wishlistCount, cartCount, logout, isLoggedIn } = useAuth();
+  const { 
+    userData, 
+    userName, 
+    wishlistCount, 
+    cartCount, 
+    logout, 
+    isLoggedIn,
+    saveProfileImage,
+    removeProfilePhoto
+  } = useAuth();
   const navigate = useNavigate();
+
+  const fileInputRef = useRef(null);
+  const imageRef = useRef(null);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [imageSrc, setImageSrc] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [savingPhoto, setSavingPhoto] = useState(false);
 
   if (!isLoggedIn) {
     return (
@@ -27,6 +43,62 @@ export default function ProfilePage() {
     navigate('/signin');
   };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImageSrc(event.target.result);
+      setZoom(1);
+      setCropperOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleSaveCrop = async () => {
+    if (!imageSrc) return;
+    setSavingPhoto(true);
+    try {
+      const img = new Image();
+      img.src = imageSrc;
+      await new Promise((resolve) => {
+        if (img.complete) resolve();
+        else img.onload = resolve;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 500;
+      canvas.height = 500;
+      const ctx = canvas.getContext('2d');
+
+      const minSide = Math.min(img.naturalWidth, img.naturalHeight);
+      const cropWidth = minSide / zoom;
+      const cropHeight = minSide / zoom;
+      const cropX = (img.naturalWidth - cropWidth) / 2;
+      const cropY = (img.naturalHeight - cropHeight) / 2;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 500, 500);
+      ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, 500, 500);
+
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+      await saveProfileImage(compressedBase64);
+      setCropperOpen(false);
+      setImageSrc(null);
+    } catch (err) {
+      console.error('Failed to crop/save profile image:', err);
+    } finally {
+      setSavingPhoto(false);
+    }
+  };
+
+  const handleDeletePhoto = async () => {
+    if (window.confirm('Are you sure you want to remove your profile photo?')) {
+      await removeProfilePhoto();
+    }
+  };
+
   return (
     <main className="flex-grow container mx-auto px-4 py-8 max-w-6xl">
       {/* Profile Header Card */}
@@ -37,13 +109,62 @@ export default function ProfilePage() {
 
         <div className="px-8 pb-8 flex flex-col md:flex-row items-center md:items-end -mt-12 space-y-4 md:space-y-0 md:space-x-6 relative z-10">
           <div className="relative">
-            <div className="relative group w-32 h-32 transition-all duration-300 transform hover:scale-105">
-              <div className="w-full h-full bg-white p-1 rounded-full shadow-lg relative z-10 overflow-hidden">
-                <div id="profile-placeholder" className="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-400 text-5xl">
-                  <i className="fas fa-user"></i>
-                </div>
+            <div
+              className="relative group cursor-pointer w-32 h-32 transition-all duration-300 transform hover:scale-105"
+              onClick={() => fileInputRef.current?.click()}
+              title={userData?.profileImage ? 'Click to change photo' : 'Click to add photo'}
+            >
+              <div className="w-full h-full bg-white p-1 rounded-full shadow-lg relative z-10 overflow-hidden group-hover:shadow-2xl group-hover:shadow-indigo-500/40 group-hover:ring-4 group-hover:ring-indigo-100 transition-all duration-300">
+                {userData?.profileImage ? (
+                  <img
+                    id="profile-image"
+                    src={userData.profileImage}
+                    className="w-full h-full rounded-full object-cover"
+                    alt="Profile"
+                  />
+                ) : (
+                  <div
+                    id="profile-placeholder"
+                    className="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-400 text-5xl"
+                  >
+                    <i className="fas fa-user"></i>
+                  </div>
+                )}
+              </div>
+
+              <div className="absolute bottom-1 right-1 z-20">
+                {userData?.profileImage ? (
+                  <button
+                    id="delete-profile-btn"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePhoto();
+                    }}
+                    className="w-8 h-8 rounded-full bg-red-500 border-2 border-white text-white flex items-center justify-center text-xs shadow-md hover:bg-red-600 transition-colors z-30 cursor-pointer"
+                    title="Delete Photo"
+                  >
+                    <i className="fas fa-trash-alt"></i>
+                  </button>
+                ) : (
+                  <div
+                    id="camera-badge"
+                    className="w-8 h-8 rounded-full bg-indigo-600 border-2 border-white text-white flex items-center justify-center text-xs shadow-md group-hover:bg-indigo-700 transition-colors"
+                    title="Upload Photo"
+                  >
+                    <i className="fas fa-camera"></i>
+                  </div>
+                )}
               </div>
             </div>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileSelect}
+            />
           </div>
 
           <div className="text-center md:text-left flex-1 mb-2">
@@ -170,6 +291,71 @@ export default function ProfilePage() {
           </div>
         </button>
       </div>
+
+      {/* Adjust Photo / Cropper Modal */}
+      {cropperOpen && (
+        <div id="cropper-modal" className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl overflow-hidden w-full max-w-md shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="font-bold text-gray-800 text-lg">Adjust Photo</h3>
+              <button
+                id="close-cropper"
+                onClick={() => setCropperOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition text-lg"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div className="relative flex-grow bg-gray-900 h-80 w-full flex flex-col items-center justify-center overflow-hidden p-4">
+              <div className="w-56 h-56 rounded-full border-4 border-indigo-500 overflow-hidden relative shadow-2xl bg-black flex items-center justify-center">
+                {imageSrc && (
+                  <img
+                    ref={imageRef}
+                    src={imageSrc}
+                    alt="Crop preview"
+                    className="w-full h-full object-cover transition-transform duration-100"
+                    style={{ transform: `scale(${zoom})` }}
+                  />
+                )}
+              </div>
+              <div className="w-64 mt-4 flex items-center space-x-3 text-white text-xs">
+                <i className="fas fa-search-minus"></i>
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="0.05"
+                  value={zoom}
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-500 cursor-pointer"
+                />
+                <i className="fas fa-search-plus"></i>
+              </div>
+            </div>
+
+            <div className="p-5 flex space-x-3 bg-white border-t border-gray-100">
+              <button
+                id="cancel-crop"
+                type="button"
+                onClick={() => setCropperOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                id="save-crop"
+                type="button"
+                onClick={handleSaveCrop}
+                disabled={savingPhoto}
+                className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition cursor-pointer"
+              >
+                {savingPhoto ? 'Saving...' : 'Save Photo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

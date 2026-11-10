@@ -4,10 +4,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import productsData from '../data/products.json';
-import { clearRecommendations as apiClearRecommendations } from '../api/apiService';
 
 export default function HomePage() {
-  const { userData, isLoggedIn, login, refreshUserData, showToast } = useAuth();
+  const { userData, isLoggedIn, login, clearUserRecommendations } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -68,19 +67,13 @@ export default function HomePage() {
   }, [sliderItems.length]);
 
   const handleRemoveRecs = async () => {
-    try {
-      await apiClearRecommendations();
-      await refreshUserData();
-      showToast('Recommendations cleared');
-    } catch (err) {
-      showToast('Failed to clear recommendations', true);
-    }
+    await clearUserRecommendations();
   };
 
-  // Recommendations: user recommendations or fallback to sample products
-  const recommendations = (userData?.recommendations && userData.recommendations.length > 0)
+  // Recommendations: user recommendations (only shown when available)
+  const userRecommendations = (userData?.recommendations && Array.isArray(userData.recommendations))
     ? userData.recommendations
-    : productsData.slice(0, 10);
+    : [];
 
   return (
     <div className="bg-gray-50">
@@ -248,19 +241,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. Recommendations Section */}
-      <hr className="my-8" />
-      <div className="recom-header" id="recomContainer">
-        <h2>Your Recommendations</h2>
-        <button id="remove-recs-btn" className="remove" onClick={handleRemoveRecs}>
-          Remove
-        </button>
-      </div>
-      <div id="recommendations-container" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 recomandations">
-        {recommendations.map((product, idx) => (
-          <ProductCard key={idx} product={product} variant="reco" />
-        ))}
-      </div>
+      {/* 3. Recommendations Section (Only displayed when user has active recommendations) */}
+      {isLoggedIn && userRecommendations.length > 0 && (
+        <>
+          <hr className="my-8" />
+          <div className="recom-header" id="recomContainer">
+            <h2>Your Recommendations</h2>
+            <button id="remove-recs-btn" className="remove" onClick={handleRemoveRecs}>
+              Remove
+            </button>
+          </div>
+          <div id="recommendations-container" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 recomandations">
+            {userRecommendations.map((product, idx) => (
+              <ProductCard key={idx} product={product} variant="reco" />
+            ))}
+          </div>
+        </>
+      )}
 
       {/* 4. Trending Brands Section */}
       <section className="py-12 bg-gray-50">
