@@ -7,119 +7,139 @@ export default function WishlistPage() {
   const { userData, addToWishlist, addToCart, isLoggedIn, showToast } = useAuth();
   const navigate = useNavigate();
 
-  const wishlist = userData?.wishlist || [];
-
-  const handleMoveToCart = async (product) => {
-    await addToCart(product);
-    await addToWishlist(product); // Toggles off from wishlist
-    showToast('Moved to Cart!');
-  };
+  const wishlist = (userData?.wishlist || []).filter(item => item);
+  const cart = (userData?.cart || []).filter(item => item);
 
   const handleRemove = async (product) => {
     await addToWishlist(product);
     showToast('Removed from Wishlist');
   };
 
+  const handleMoveToCart = async (product) => {
+    await addToCart(product);
+    showToast('Moved to Cart!');
+  };
+
   if (!isLoggedIn) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <div className="w-20 h-20 bg-pink-50 text-pink-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-          <i className="fas fa-heart"></i>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gray-50">
+        <div className="text-center bg-white p-10 rounded-2xl shadow-xl">
+          <h1 className="text-2xl font-bold mb-4">Please sign in</h1>
+          <Link to="/signin" className="text-purple-600 font-bold hover:underline">
+            Go to Sign In
+          </Link>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Sign In to See Your Wishlist</h2>
-        <p className="text-gray-500 mb-6">Save your favorite items here and shop them anytime.</p>
-        <Link
-          to="/signin"
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-full shadow transition"
-        >
-          Sign In Now
-        </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 pb-4">
-        <div className="flex items-center space-x-3">
-          <i className="fas fa-heart text-red-500 text-2xl"></i>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">
-            My Wishlist
+    <main className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-gray-200 pb-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-900">
+            My Wishlist <span className="text-red-500">❤️</span>
           </h1>
+          <p className="text-gray-500 mt-1 text-sm">Save your favorite items now, buy them later.</p>
         </div>
-        <span className="bg-pink-100 text-pink-800 text-xs font-bold px-3 py-1 rounded-full">
-          {wishlist.length} {wishlist.length === 1 ? 'Item' : 'Items'} Saved
-        </span>
+        <div className="mt-4 md:mt-0">
+          <span id="wishlist-count-badge" className="bg-purple-100 text-purple-700 px-4 py-1 rounded-full text-sm font-semibold">
+            {wishlist.length} Items Saved
+          </span>
+        </div>
       </div>
 
-      {/* Grid */}
-      {wishlist.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100 max-w-lg mx-auto">
-          <div className="w-20 h-20 bg-pink-50 text-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-            <i className="far fa-heart"></i>
-          </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Your Wishlist is Empty</h2>
-          <p className="text-gray-500 text-sm mb-6">
-            Explore our collections and tap the heart icon on any product to save it here for later.
-          </p>
-          <Link
-            to="/explore"
-            className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-6 py-2.5 rounded-full transition"
-          >
-            Start Exploring
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {wishlist.map((product, idx) => (
-            <div
-              key={idx}
-              className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 flex flex-col justify-between"
-            >
-              <div 
-                className="h-44 flex items-center justify-center p-2 cursor-pointer mb-3"
-                onClick={() => navigate(`/product/${encodeURIComponent(product.name)}`)}
-              >
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="max-h-full max-w-full object-contain hover:scale-105 transition duration-300"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <h3
-                  onClick={() => navigate(`/product/${encodeURIComponent(product.name)}`)}
-                  className="font-semibold text-sm text-gray-800 line-clamp-2 hover:text-indigo-600 cursor-pointer"
-                  title={product.name}
-                >
-                  {product.name}
-                </h3>
-                <span className="block font-bold text-sm text-gray-900">
-                  ₹{Number(product.price).toLocaleString('en-IN')}
-                </span>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-gray-100 space-y-2">
-                <button
-                  onClick={() => handleMoveToCart(product)}
-                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"
-                >
-                  Move to Cart
-                </button>
-                <button
-                  onClick={() => handleRemove(product)}
-                  className="w-full py-1 text-xs text-red-500 hover:text-red-700 font-medium transition"
-                >
-                  Remove
-                </button>
-              </div>
+      <div id="wishlist-container" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {wishlist.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-sm border border-dashed border-gray-300">
+            <div className="w-24 h-24 bg-purple-50 rounded-full flex items-center justify-center mb-6">
+              <i className="far fa-heart text-4xl text-purple-300"></i>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Wishlist is Empty</h2>
+            <p className="text-gray-500 mb-8 max-w-md text-center">
+              Looks like you haven't found anything you like yet. Browse our categories to find your next favorite item.
+            </p>
+            <Link
+              to="/explore"
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition duration-300"
+            >
+              Start Shopping
+            </Link>
+          </div>
+        ) : (
+          wishlist.map((product) => {
+            const isInCart = cart.some(p => p && p.name === product.name);
+            const btnText = isInCart ? 'Go to Cart' : 'Move to Cart';
+            const btnClass = isInCart
+              ? 'go-to-cart-btn bg-green-600 hover:bg-green-700'
+              : 'add-to-cart-btn bg-gray-900 hover:bg-purple-600';
+            const btnIcon = isInCart ? 'fa-check' : 'fa-shopping-cart';
+
+            return (
+              <div
+                key={product.name}
+                className="wishlist-card group bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col"
+                data-product-name={encodeURIComponent(product.name)}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleRemove(product)}
+                  className="wishlist-remove-btn absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-white rounded-full shadow text-gray-400 hover:text-red-500 hover:bg-red-50 transition z-10"
+                  title="Remove from Wishlist"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+
+                <div
+                  className="product-image-container relative h-48 mb-4 overflow-hidden rounded-xl bg-gray-50 cursor-pointer"
+                  onClick={() => navigate(`/detail.html?name=${encodeURIComponent(product.name)}`)}
+                >
+                  <img
+                    className="product-image w-full h-full object-contain mix-blend-multiply transform transition-transform duration-500 group-hover:scale-110"
+                    src={product.image}
+                    alt={product.name}
+                  />
+                </div>
+
+                <div className="flex-grow flex flex-col">
+                  <div className="text-xs font-bold text-purple-600 uppercase tracking-wide mb-1">Nexus Approved</div>
+                  <h3
+                    className="product-name font-bold text-gray-900 text-lg leading-tight mb-2 line-clamp-2 hover:text-purple-600 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/detail.html?name=${encodeURIComponent(product.name)}`)}
+                  >
+                    {product.name}
+                  </h3>
+
+                  <div className="mt-auto mb-4">
+                    <span className="text-xl font-extrabold text-gray-900">
+                      ₹{product.price.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+
+                  {isInCart ? (
+                    <Link
+                      to="/cart"
+                      className={`${btnClass} w-full text-white py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg`}
+                    >
+                      <i className={`fas ${btnIcon}`}></i>
+                      <span>{btnText}</span>
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleMoveToCart(product)}
+                      className={`${btnClass} w-full text-white py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg`}
+                    >
+                      <i className={`fas ${btnIcon}`}></i>
+                      <span>{btnText}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </main>
   );
 }
-

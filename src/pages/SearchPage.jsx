@@ -1,85 +1,119 @@
 // client/src/pages/SearchPage.jsx
-import React, { useState, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import React, { useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import productsData from '../data/products.json';
 import ProductCard from '../components/ProductCard';
 
+const CATEGORY_SYNONYMS = {
+  mobile: ["phone", "smartphone", "android", "iphone", "cell", "mobiles", "phones", "5g", "4g", "galaxy", "redmi", "realme", "vivo", "oppo", "iqoo", "pixel", "pad", "tablet", "tab"],
+  laptop: ["computer", "notebook", "pc", "macbook", "desktop", "laptops", "windows", "processor", "intel", "ryzen", "book", "chromebook", "ultrabook", "gaming laptop", "workstation"],
+  electronics: ["gadget", "tech", "accessory", "accessories", "camera", "dslr", "mirrorless", "lens", "headphone", "earbud", "speaker", "watch", "smartwatch", "buds", "airpods", "tws", "audio", "mouse", "keyboard", "gaming", "console", "ps5", "playstation", "gamepad", "controller", "printer", "monitor", "gpu", "graphic", "card", "rtx", "cooling", "fan"],
+  fashion: ["cloth", "clothing", "wear", "apparel", "dress", "shirt", "pant", "jeans", "shoe", "sneaker", "top", "t-shirt", "men", "women", "kids", "saree", "kurta", "anarkali", "ethnic", "slide", "slipper", "flip", "flop", "sandal", "bag", "backpack", "luggage"],
+  homeappliances: ["home", "appliance", "fridge", "refrigerator", "tv", "television", "smart tv", "led", "qled", "ac", "conditioner", "air", "cool", "washing", "machine", "cooler", "fan", "ceiling", "sofa", "bed", "chair", "table", "desk", "furniture", "living", "room", "study", "soundbar", "theatre", "woofer", "subwoofer", "audio"],
+  grocery: ["food", "eat", "snack", "drink", "biscuit", "oil", "chocolate", "almond", "dry fruit", "nut", "masala", "spice", "noodle", "maggi", "pasta", "shampoo", "soap", "wash", "hair", "care", "ghee", "dairy", "salt", "sugar", "pie", "cookie", "cake"]
+};
+
+const IGNORABLE_TERMS = {
+  mobile: ["mobile", "mobiles", "phone", "phones", "smartphone", "smartphones", "cell", "android", "5g", "4g", "device"],
+  laptop: ["laptop", "laptops", "computer", "computers", "pc", "system", "machine"],
+  electronics: ["electronics", "electronic", "gadget", "gadgets", "tech", "accessory", "accessories"],
+  fashion: ["fashion", "cloth", "clothing", "clothes", "wear", "apparel", "style", "men", "women", "kids"],
+  homeappliances: ["home", "appliance", "appliances", "item", "product"],
+  grocery: ["grocery", "groceries", "food", "foods", "eat", "item", "product", "pantry"]
+};
+
+function extractBrandFromName(name) {
+  const knownBrands = [
+    'Apple', 'HP', 'Samsung', 'OnePlus', 'Google', 'Asus', 'Realme', 'Motorola', 'Sony', 'Zebronics', 'MSI', 'LG', 'Vivo', 'Oppo', 'iQOO',
+    'Nike', 'Levis', 'Allen Solly', 'Adidas', 'Puma',
+    'ITC', 'Aashirvaad', 'Sunfeast', 'Orion', 'Fortune', 'Head & Shoulders',
+    'Callas', 'Casastyle', 'Nilkamal', 'Crompton', 'Whirlpool', 'Haier', 'Godrej'
+  ];
+  const lower = (name || '').toLowerCase();
+  for (const b of knownBrands) {
+    if (lower.includes(b.toLowerCase())) return b;
+  }
+  return '';
+}
+
+function getFilteredResults(allItems, searchTerm) {
+  if (!searchTerm || !allItems) return [];
+  const terms = searchTerm.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+  let targetBrand = null;
+  const targetCategories = new Set();
+
+  terms.forEach(term => {
+    let matched = false;
+    const brandMatch = allItems.find(i => i.brand && i.brand.toLowerCase() === term);
+    if (brandMatch) {
+      targetBrand = term;
+      matched = true;
+    }
+    if (!matched) {
+      for (const [catName, syns] of Object.entries(CATEGORY_SYNONYMS)) {
+        if (syns.includes(term) || catName === term) {
+          targetCategories.add(catName);
+          break;
+        }
+      }
+    }
+  });
+
+  return allItems.filter(item => {
+    const itemBrand = (item.brand || '').toLowerCase();
+    const itemCategory = (item.category || '').toLowerCase();
+    const itemName = (item.name || '').toLowerCase();
+
+    if (targetBrand && !itemBrand.includes(targetBrand) && !itemName.includes(targetBrand)) {
+      return false;
+    }
+
+    if (targetCategories.size > 0 && !targetCategories.has(itemCategory)) {
+      return false;
+    }
+
+    const mustMatchKeywords = terms.filter(term => {
+      if (targetBrand && term === targetBrand) return false;
+      const isKnownCatWord = Object.values(IGNORABLE_TERMS).some(list => list.includes(term));
+      if (isKnownCatWord) return false;
+      return true;
+    });
+
+    if (mustMatchKeywords.length > 0) {
+      const allMatch = mustMatchKeywords.every(kw => itemName.includes(kw));
+      if (!allMatch) return false;
+    }
+
+    return true;
+  });
+}
+
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
-  const query = searchParams.get('q') || '';
-  const [sortBy, setSortBy] = useState('relevance');
+  const query = searchParams.get('q') || localStorage.getItem('lastSearch') || '';
 
   const filteredProducts = useMemo(() => {
     if (!query.trim()) return [];
-    const q = query.toLowerCase().trim();
-    let results = productsData.filter(product => {
-      const nameMatch = product.name?.toLowerCase().includes(q);
-      const catMatch = product.category?.toLowerCase().includes(q);
-      return nameMatch || catMatch;
-    });
-
-    if (sortBy === 'price-low') {
-      results = [...results].sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'price-high') {
-      results = [...results].sort((a, b) => b.price - a.price);
-    }
-
-    return results;
-  }, [query, sortBy]);
+    const allWithBrand = productsData.map(item => ({
+      ...item,
+      brand: extractBrandFromName(item.name)
+    }));
+    return getFilteredResults(allWithBrand, query);
+  }, [query]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Header and Filter Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Search Results for <span className="text-indigo-600 font-extrabold">"{query}"</span>
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Found {filteredProducts.length} matching products
-          </p>
-        </div>
-
-        {/* Sort Select */}
-        <div className="flex items-center space-x-2">
-          <label className="text-xs text-gray-500 font-medium">Sort by:</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="text-xs border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="relevance">Relevance</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Results Grid */}
+    <main className="container mx-auto px-0 py-4 md:py-8">
       {filteredProducts.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100 max-w-lg mx-auto">
-          <div className="w-20 h-20 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-            <i className="fas fa-search"></i>
-          </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">No matching products found</h2>
-          <p className="text-gray-500 text-sm mb-6">
-            We couldn't find anything matching "{query}". Try checking your spelling or use different keywords.
-          </p>
-          <Link
-            to="/explore"
-            className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-6 py-2.5 rounded-full transition"
-          >
-            Browse All Products
-          </Link>
+        <div className="text-center py-16">
+          <p className="text-gray-500 text-lg">No products found matching "{query}".</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {filteredProducts.map((product, idx) => (
-            <ProductCard key={idx} product={product} />
+        <div id="products-container" className="products-grid animate-fadeIn">
+          {filteredProducts.map((item) => (
+            <ProductCard key={item.name} product={item} />
           ))}
         </div>
       )}
-    </div>
+    </main>
   );
 }
-

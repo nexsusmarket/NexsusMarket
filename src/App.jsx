@@ -28,7 +28,7 @@ import TopDealsPage from './pages/TopDealsPage';
 
 export default function App() {
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 text-gray-800">
+    <div className="flex flex-col min-h-screen bg-gray-50 text-gray-800">
       <Navbar />
 
       <main className="flex-1">
@@ -36,39 +36,74 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/cart" element={<CartPage />} />
+          
+          {/* Detail routes */}
           <Route path="/product/:name" element={<DetailPage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/wishlist" element={<WishlistPage />} />
-          <Route path="/orders" element={<OrderPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/address" element={<AddressPage />} />
-          <Route path="/trending" element={<AllTrendingPage />} />
-          <Route path="/brand/:name" element={<BrandPage />} />
-          <Route path="/category/:name" element={<CategoryPage />} />
-          <Route path="/support" element={<CustomerServicePage />} />
-          <Route path="/delivered" element={<DeliveredPage />} />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/deals" element={<TopDealsPage />} />
+          <Route path="/detail" element={<DetailPage />} />
+          <Route path="/detail.html" element={<DetailPage />} />
 
-          {/* Backward compatibility with .html extensions */}
+          {/* Search routes */}
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/search.html" element={<SearchPage />} />
+
+          {/* Wishlist routes */}
+          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/wishlist.html" element={<WishlistPage />} />
+
+          {/* Orders routes */}
+          <Route path="/orders" element={<OrderPage />} />
+          <Route path="/order" element={<OrderPage />} />
+          <Route path="/order.html" element={<OrderPage />} />
+
+          {/* Profile routes */}
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile.html" element={<ProfilePage />} />
+
+          {/* Checkout routes */}
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/checkout.html" element={<CheckoutPage />} />
+
+          {/* Address routes */}
+          <Route path="/address" element={<AddressPage />} />
+          <Route path="/address.html" element={<AddressPage />} />
+
+          {/* Trending routes */}
+          <Route path="/trending" element={<AllTrendingPage />} />
+          <Route path="/all-trending" element={<AllTrendingPage />} />
+          <Route path="/allTrending.html" element={<AllTrendingPage />} />
+
+          {/* Brand routes */}
+          <Route path="/brand" element={<BrandPage />} />
+          <Route path="/brand/:name" element={<BrandPage />} />
+          <Route path="/brand.html" element={<BrandPage />} />
+
+          {/* Category routes */}
+          <Route path="/category" element={<CategoryPage />} />
+          <Route path="/category/:name" element={<CategoryPage />} />
+          <Route path="/category.html" element={<CategoryPage />} />
+
+          {/* Customer Service routes */}
+          <Route path="/support" element={<CustomerServicePage />} />
+          <Route path="/customer-service" element={<CustomerServicePage />} />
+          <Route path="/customer-service.html" element={<CustomerServicePage />} />
+
+          {/* Delivered routes */}
+          <Route path="/delivered" element={<DeliveredPage />} />
+          <Route path="/delivered.html" element={<DeliveredPage />} />
+
+          {/* Explore routes */}
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/explore.html" element={<ExplorePage />} />
+
+          {/* Top Deals routes */}
+          <Route path="/deals" element={<TopDealsPage />} />
+          <Route path="/top-deals" element={<TopDealsPage />} />
+          <Route path="/topDeals.html" element={<TopDealsPage />} />
+
+          {/* Legacy index.html */}
           <Route path="/index.html" element={<Navigate to="/" replace />} />
           <Route path="/signin.html" element={<Navigate to="/signin" replace />} />
           <Route path="/cart.html" element={<Navigate to="/cart" replace />} />
-          <Route path="/detail.html" element={<DetailPage />} />
-          <Route path="/search.html" element={<SearchPage />} />
-          <Route path="/wishlist.html" element={<Navigate to="/wishlist" replace />} />
-          <Route path="/order.html" element={<Navigate to="/orders" replace />} />
-          <Route path="/profile.html" element={<Navigate to="/profile" replace />} />
-          <Route path="/checkout.html" element={<Navigate to="/checkout" replace />} />
-          <Route path="/address.html" element={<Navigate to="/address" replace />} />
-          <Route path="/allTrending.html" element={<Navigate to="/trending" replace />} />
-          <Route path="/brand.html" element={<BrandPage />} />
-          <Route path="/category.html" element={<CategoryPage />} />
-          <Route path="/customer-service.html" element={<Navigate to="/support" replace />} />
-          <Route path="/delivered.html" element={<Navigate to="/delivered" replace />} />
-          <Route path="/explore.html" element={<Navigate to="/explore" replace />} />
-          <Route path="/topDeals.html" element={<Navigate to="/deals" replace />} />
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -82,4 +117,3 @@ export default function App() {
     </div>
   );
 }
-

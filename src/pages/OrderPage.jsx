@@ -1,283 +1,363 @@
 // client/src/pages/OrderPage.jsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { cancelOrder as apiCancelOrder } from '../api/apiService';
 
 export default function OrderPage() {
-  const { userData, refreshUserData, isLoggedIn, showToast } = useAuth();
-  const [cancelModal, setCancelModal] = useState({ open: false, orderId: null });
-  const [trackingModal, setTrackingModal] = useState({ open: false, order: null });
+  const { userData, refreshUserData, showToast, isLoggedIn } = useAuth();
+  const navigate = useNavigate();
+
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
+  const [trackingModalOpen, setTrackingModalOpen] = useState(false);
+  const [trackingOrder, setTrackingOrder] = useState(null);
   const [cancelling, setCancelling] = useState(false);
 
-  const orders = userData?.orders || [];
+  if (!isLoggedIn) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] bg-white">
+        <div className="text-center p-8">
+          <h2 className="text-2xl font-bold mb-4">Please Sign In to View Orders</h2>
+          <Link to="/signin" className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-bold">
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const allOrders = [...(userData?.orders || [])].sort(
+    (a, b) => new Date(b.orderDate) - new Date(a.orderDate)
+  );
+
+  const now = new Date();
+  const twentyFourHoursAgo = now.getTime() - (24 * 60 * 60 * 1000);
+
+  const visibleOrders = allOrders.filter(order => {
+    if (order.status !== 'Delivered') return true;
+    if (order.actualDeliveryDate) {
+      return new Date(order.actualDeliveryDate).getTime() > twentyFourHoursAgo;
+    }
+    return false;
+  });
 
   const handleCancelConfirm = async () => {
-    if (!cancelModal.orderId) return;
+    if (!orderToCancel) return;
     setCancelling(true);
     try {
-      await apiCancelOrder(cancelModal.orderId);
+      await apiCancelOrder(orderToCancel);
       await refreshUserData();
-      showToast('Order cancelled successfully.');
-      setCancelModal({ open: false, orderId: null });
+      showToast('Order cancelled successfully');
+      setCancelModalOpen(false);
+      setOrderToCancel(null);
     } catch (err) {
-      showToast(err.message || 'Failed to cancel order', true);
+      showToast(err.message || 'Error cancelling order', true);
     } finally {
       setCancelling(false);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Processing': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Shipped': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'Out for Delivery': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Delivered': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'Cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  const getTrackingSteps = (order) => {
+    const isCancelled = order.status === 'Cancelled';
+    const isDelivered = order.status === 'Delivered';
+    const isShipped = order.status === 'Shipped' || isDelivered;
+
+    const orderDateStr = new Date(order.orderDate).toLocaleDateString('en-IN', {
+      day: 'numeric', month: 'short'
+    });
+    const estDateStr = new Date(order.estimatedDelivery).toLocaleDateString('en-IN', {
+      day: 'numeric', month: 'short'
+    });
+
+    if (isCancelled) {
+      return [
+        { title: 'Ordered', desc: 'Order was placed', timeInfo: orderDateStr, active: true, done: true },
+        { title: 'Cancelled', desc: 'Order was cancelled', timeInfo: 'Cancelled', active: true, isRed: true }
+      ];
     }
+
+    return [
+      { title: 'Ordered', desc: 'Order placed & confirmed', timeInfo: orderDateStr, active: true, done: true },
+      { title: 'Shipped', desc: isShipped ? 'Package has left courier facility' : 'Preparing dispatch', timeInfo: isShipped ? 'In Transit' : 'Pending', active: isShipped, done: isShipped },
+      { title: 'Out for Delivery', desc: isDelivered ? 'Delivered by courier' : 'Expected soon', timeInfo: isDelivered ? 'Completed' : estDateStr, active: isDelivered, done: isDelivered }
+    ];
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-          <i className="fas fa-box-open"></i>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Track Your Orders</h2>
-        <p className="text-gray-500 mb-6">Sign in to view your active and past orders with live tracking.</p>
-        <Link to="/signin" className="bg-indigo-600 text-white font-bold px-8 py-3 rounded-full shadow transition">
-          Sign In
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Page Title */}
-      <div className="flex items-center justify-between border-b border-gray-200 pb-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 flex items-center gap-3">
-            <i className="fas fa-boxes text-indigo-600"></i>
-            Your Orders
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">Manage and track your recent purchases</p>
+    <main className="container mx-auto p-4 md:p-8 max-w-6xl">
+      <div className="flex items-baseline justify-between mb-6 border-b pb-4">
+        <h1 className="text-3xl font-bold text-gray-900">Your Orders</h1>
+        <div className="text-sm text-gray-500">
+          <span id="total-orders-count" className="font-bold text-gray-900">
+            {visibleOrders.length}
+          </span>{' '}
+          active orders
         </div>
-        <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">
-          {orders.length} {orders.length === 1 ? 'Order' : 'Orders'} Total
-        </span>
       </div>
 
-      {/* Orders List */}
-      {orders.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
-          <div className="w-20 h-20 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-            <i className="fas fa-box"></i>
+      <div id="orders-container" className="space-y-8 min-h-[50vh]">
+        {visibleOrders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-12 bg-white border border-gray-200 rounded-lg">
+            <div className="bg-gray-100 p-4 rounded-full mb-4">
+              <i className="fas fa-box-open text-4xl text-gray-400"></i>
+            </div>
+            <h2 className="text-xl font-bold text-gray-800">No active orders</h2>
+            <p className="text-gray-500 mt-2">Looks like you haven't bought anything recently.</p>
+            <Link to="/" className="mt-6 text-indigo-600 font-semibold hover:underline">
+              Start Shopping
+            </Link>
           </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">No orders placed yet</h2>
-          <p className="text-gray-500 text-sm mb-6">Discover products you'll love and place your first order!</p>
-          <Link
-            to="/explore"
-            className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-6 py-2.5 rounded-full transition"
-          >
-            Start Shopping
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {orders.map((order, idx) => (
-            <div
-              key={idx}
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
-            >
-              {/* Order Header */}
-              <div className="bg-gray-50 p-4 sm:p-6 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm">
-                <div className="flex flex-wrap gap-6 text-gray-600">
-                  <div>
-                    <span className="block text-gray-400 text-xs uppercase font-medium">Order Placed</span>
-                    <span className="font-semibold text-gray-900">
-                      {new Date(order.orderDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
+        ) : (
+          visibleOrders.map((order) => {
+            const orderDate = new Date(order.orderDate).toLocaleDateString('en-IN', {
+              day: 'numeric', month: 'long', year: 'numeric'
+            });
+            const deliveryDate = new Date(order.estimatedDelivery).toLocaleDateString('en-IN', {
+              weekday: 'short', day: 'numeric', month: 'short'
+            });
+
+            const addr = order.shippingAddress || {};
+            const shipName = addr.name || 'Customer';
+            const shipStreet = addr.address || 'Address not available';
+            const shipCity = addr.city || '';
+            const shipState = addr.state || '';
+            const shipPin = addr.pincode || '';
+            const shipPhone = addr.mobile || '';
+
+            let statusClass = 'text-orange-600';
+            let statusMessage = `Arriving ${deliveryDate}`;
+            if (order.status === 'Delivered') {
+              statusClass = 'text-green-700';
+              statusMessage = `Delivered on ${new Date(order.actualDeliveryDate || order.estimatedDelivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`;
+            } else if (order.status === 'Cancelled') {
+              statusClass = 'text-red-600';
+              statusMessage = 'Order Cancelled';
+            }
+
+            return (
+              <div
+                key={order.orderId}
+                className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow"
+              >
+                {/* Header Strip */}
+                <div className="bg-gray-100 px-6 py-4 flex flex-wrap justify-between items-start gap-y-4 text-sm text-gray-600 border-b border-gray-200">
+                  <div className="flex gap-8">
+                    <div className="flex flex-col">
+                      <span className="uppercase text-xs font-bold text-gray-500">Order Placed</span>
+                      <span className="text-gray-800">{orderDate}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="uppercase text-xs font-bold text-gray-500">Total</span>
+                      <span className="text-gray-800 font-medium">₹{Number(order.totalAmount).toFixed(2)}</span>
+                    </div>
+                    <div className="hidden md:flex flex-col relative group">
+                      <span className="uppercase text-xs font-bold text-gray-500">Ship To</span>
+                      <span className="text-indigo-600 cursor-pointer flex items-center gap-1 group-hover:underline">
+                        {shipName} <i className="fas fa-chevron-down text-xs"></i>
+                      </span>
+                      <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 shadow-xl rounded-md p-3 hidden group-hover:block z-10 text-xs text-gray-700">
+                        <p className="font-bold mb-1">{shipName}</p>
+                        <p>{shipStreet}</p>
+                        <p>{shipCity}, {shipState} {shipPin}</p>
+                        <p className="mt-1">Phone: {shipPhone}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="block text-gray-400 text-xs uppercase font-medium">Total Amount</span>
-                    <span className="font-bold text-gray-900">₹{(order.totalAmount || 0).toFixed(2)}</span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-400 text-xs uppercase font-medium">Ship To</span>
-                    <span className="font-semibold text-gray-900 truncate max-w-[150px] block">
-                      {order.shippingAddress?.name || userData?.name}
-                    </span>
+                  <div className="flex flex-col text-right">
+                    <span className="uppercase text-xs font-bold text-gray-500">Order # {order.orderId}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
-                    {order.status}
-                  </span>
-                  <span className="text-gray-400 font-mono text-xs">#{order.orderId}</span>
+                {/* Body Content */}
+                <div className="p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <div className="lg:col-span-3">
+                      <h3 className={`text-lg font-bold ${statusClass} mb-4`}>{statusMessage}</h3>
+                      <div className="mt-4">
+                        {(order.items || []).map((item, idx) => (
+                          <div key={idx} className="flex gap-4 mb-6 last:mb-0">
+                            <div className="flex-shrink-0 w-24 h-24 bg-gray-50 border border-gray-200 rounded-md p-1 flex items-center justify-center">
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="max-w-full max-h-full object-contain cursor-pointer"
+                                onClick={() => navigate(`/detail.html?name=${encodeURIComponent(item.name)}`)}
+                              />
+                            </div>
+                            <div className="flex-grow">
+                              <h4 className="font-bold text-gray-800 text-sm md:text-base line-clamp-2 hover:text-indigo-600 cursor-pointer">
+                                <Link to={`/detail.html?name=${encodeURIComponent(item.name)}`}>
+                                  {item.name}
+                                </Link>
+                              </h4>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Category: {item.category || 'General'}
+                              </div>
+                              <div className="mt-2 text-sm font-medium text-gray-900">
+                                ₹{item.price}{' '}
+                                <span className="text-gray-500 text-xs font-normal">x {item.quantity}</span>
+                              </div>
+
+                              <div className="mt-3 flex gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/detail.html?name=${encodeURIComponent(item.name)}`)}
+                                  className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 transition shadow-sm"
+                                >
+                                  Buy it again
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-1 border-t lg:border-t-0 lg:border-l border-gray-100 lg:pl-6 pt-6 lg:pt-0 space-y-6">
+                      <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Delivery Address</h4>
+                        <div className="text-sm text-gray-800 leading-relaxed">
+                          <p className="font-bold">{shipName}</p>
+                          <p>{shipStreet}</p>
+                          <p>{shipCity}, {shipState}</p>
+                          <p className="font-medium">{shipPin}</p>
+                          <p className="mt-2 text-xs text-gray-500">Phone: {shipPhone}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {order.status !== 'Cancelled' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTrackingOrder(order);
+                              setTrackingModalOpen(true);
+                            }}
+                            className="track-package-btn w-full text-sm bg-yellow-400 hover:bg-yellow-500 text-gray-900 border border-yellow-500 font-medium py-2 rounded-md shadow-sm transition"
+                          >
+                            Track Package
+                          </button>
+                        )}
+
+                        {order.status !== 'Delivered' && order.status !== 'Cancelled' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOrderToCancel(order.orderId);
+                              setCancelModalOpen(true);
+                            }}
+                            className="cancel-order-btn w-full text-sm border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 py-2 rounded-md shadow-sm transition mt-2"
+                          >
+                            Cancel Order
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+            );
+          })
+        )}
+      </div>
 
-              {/* Delivery OTP Notice (if Out for Delivery) */}
-              {order.status === 'Out for Delivery' && order.deliveryOTP && (
-                <div className="bg-purple-50 border-b border-purple-100 p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-purple-900">
-                    <i className="fas fa-truck-fast text-2xl text-purple-600"></i>
-                    <div>
-                      <p className="font-bold text-sm">Package is Out for Delivery Today!</p>
-                      <p className="text-xs text-purple-700">Share this verification OTP with the delivery agent:</p>
-                    </div>
-                  </div>
-                  <div className="bg-white border-2 border-purple-400 px-4 py-1.5 rounded-lg text-xl font-mono font-black text-purple-700 tracking-widest">
-                    {order.deliveryOTP}
-                  </div>
-                </div>
-              )}
+      {/* Cancel Confirm Modal */}
+      {cancelModalOpen && (
+        <div className="modal-overlay fixed inset-0 z-50 bg-black/50 flex items-center justify-center backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 border border-gray-100">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">Cancel this order?</h3>
+            </div>
+            <div className="px-6 py-6">
+              <p className="text-gray-600 mb-4 text-base">Are you sure you want to cancel?</p>
+              <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
+                <i className="fas fa-exclamation-triangle text-red-500 mt-0.5 text-sm"></i>
+                <span className="text-sm text-red-600 font-medium">Warning: This action cannot be undone.</span>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setCancelModalOpen(false)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition shadow-sm"
+              >
+                Don't Cancel
+              </button>
+              <button
+                type="button"
+                disabled={cancelling}
+                onClick={handleCancelConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition shadow-md shadow-red-200"
+              >
+                {cancelling ? 'Cancelling...' : 'Yes, Cancel Order'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-              {/* Order Items */}
-              <div className="p-4 sm:p-6 space-y-4">
-                {order.items?.map((item, itemIdx) => (
-                  <div key={itemIdx} className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gray-50 rounded-xl p-1 flex-shrink-0 flex items-center justify-center border border-gray-100">
-                      <img src={item.image} alt={item.name} className="max-h-full max-w-full object-contain" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <Link
-                        to={`/product/${encodeURIComponent(item.name)}`}
-                        className="font-semibold text-sm text-gray-900 hover:text-indigo-600 truncate block"
+      {/* Tracking Modal */}
+      {trackingModalOpen && trackingOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm"
+            onClick={() => setTrackingModalOpen(false)}
+          ></div>
+          <div className="liquid-glass-modal w-full max-w-2xl relative p-8 transform transition-all scale-100 opacity-100 overflow-hidden bg-white/95">
+            <div className="flex justify-between items-start mb-8 relative z-10">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">Track Package</h2>
+                <p className="text-gray-500 text-sm mt-1">
+                  Order ID: <span className="font-mono text-indigo-600">{trackingOrder.orderId}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTrackingModalOpen(false)}
+                className="w-10 h-10 rounded-full bg-white/50 hover:bg-white flex items-center justify-center text-gray-600 transition shadow-sm"
+              >
+                <i className="fas fa-times text-lg"></i>
+              </button>
+            </div>
+
+            <div className="relative z-10 pl-4 py-2">
+              <div className="space-y-8">
+                {getTrackingSteps(trackingOrder).map((step, idx) => (
+                  <div key={idx} className="relative flex gap-6 pb-2">
+                    <div className="flex-shrink-0">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                          step.isRed
+                            ? 'bg-red-500 text-white'
+                            : step.active
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-200 text-gray-400'
+                        }`}
                       >
-                        {item.name}
-                      </Link>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Quantity: {item.quantity || 1} &bull; Price: ₹{(item.pricePaid || item.price).toLocaleString('en-IN')}
-                      </p>
+                        <i className={`fas ${step.active ? 'fa-check' : 'fa-circle text-[8px]'}`}></i>
+                      </div>
+                    </div>
+                    <div className="liquid-node flex-grow p-4 rounded-xl border border-white/50 mb-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-lg text-gray-800">{step.title}</h4>
+                          <p className="text-sm text-gray-600 mt-1">{step.desc}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                            {step.timeInfo}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Order Actions Footer */}
-              <div className="p-4 sm:p-6 bg-gray-50/50 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
-                <div className="text-xs text-gray-500">
-                  <span className="font-medium text-gray-700">Estimated Delivery:</span>{' '}
-                  {order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : '3-4 business days'}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setTrackingModal({ open: true, order })}
-                    className="px-4 py-1.5 border border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-semibold transition"
-                  >
-                    <i className="fas fa-route mr-1"></i> Track Shipment
-                  </button>
-
-                  {order.status === 'Processing' && (
-                    <button
-                      onClick={() => setCancelModal({ open: true, orderId: order.orderId })}
-                      className="px-4 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold transition"
-                    >
-                      Cancel Order
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* TRACKING TIMELINE MODAL */}
-      {trackingModal.open && trackingModal.order && (
-        <div className="modal-overlay" onClick={() => setTrackingModal({ open: false, order: null })}>
-          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Shipment Tracking</h2>
-              <button className="close-button" onClick={() => setTrackingModal({ open: false, order: null })}>&times;</button>
-            </div>
-            <div className="p-2 space-y-6">
-              <p className="text-xs text-gray-500">
-                Order <span className="font-mono font-bold text-gray-800">#{trackingModal.order.orderId}</span>
-              </p>
-
-              {/* Timeline Steps */}
-              <div className="space-y-6 relative pl-6 border-l-2 border-indigo-200">
-                {/* Step 1: Confirmed */}
-                <div className="relative">
-                  <span className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-emerald-100"></span>
-                  <h4 className="font-bold text-sm text-gray-900">Order Confirmed</h4>
-                  <p className="text-xs text-gray-500">Your order has been placed and confirmed.</p>
-                </div>
-
-                {/* Step 2: Shipped */}
-                <div className="relative">
-                  <span className={`absolute -left-[31px] top-0 w-4 h-4 rounded-full ${
-                    ['Shipped', 'Out for Delivery', 'Delivered'].includes(trackingModal.order.status)
-                      ? 'bg-emerald-500 ring-4 ring-emerald-100'
-                      : 'bg-gray-300'
-                  }`}></span>
-                  <h4 className="font-bold text-sm text-gray-900">Shipped</h4>
-                  <p className="text-xs text-gray-500">Package has been dispatched via courier partner.</p>
-                </div>
-
-                {/* Step 3: Out for Delivery */}
-                <div className="relative">
-                  <span className={`absolute -left-[31px] top-0 w-4 h-4 rounded-full ${
-                    ['Out for Delivery', 'Delivered'].includes(trackingModal.order.status)
-                      ? 'bg-purple-600 ring-4 ring-purple-100'
-                      : 'bg-gray-300'
-                  }`}></span>
-                  <h4 className="font-bold text-sm text-gray-900">Out for Delivery</h4>
-                  <p className="text-xs text-gray-500">Courier agent is on the way to your delivery address.</p>
-                </div>
-
-                {/* Step 4: Delivered */}
-                <div className="relative">
-                  <span className={`absolute -left-[31px] top-0 w-4 h-4 rounded-full ${
-                    trackingModal.order.status === 'Delivered'
-                      ? 'bg-emerald-500 ring-4 ring-emerald-100'
-                      : 'bg-gray-300'
-                  }`}></span>
-                  <h4 className="font-bold text-sm text-gray-900">Delivered</h4>
-                  <p className="text-xs text-gray-500">Package delivered safely to recipient.</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* CANCEL ORDER CONFIRMATION MODAL */}
-      {cancelModal.open && (
-        <div className="modal-overlay" onClick={() => setCancelModal({ open: false, orderId: null })}>
-          <div className="modal-content text-center p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
-              <i className="fas fa-exclamation-triangle"></i>
-            </div>
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Cancel This Order?</h2>
-            <p className="text-gray-500 text-xs mb-6">
-              Are you sure you want to cancel order #{cancelModal.orderId}? This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCancelModal({ open: false, orderId: null })}
-                className="flex-1 py-2 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700"
-              >
-                No, Keep It
-              </button>
-              <button
-                onClick={handleCancelConfirm}
-                disabled={cancelling}
-                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold"
-              >
-                {cancelling ? 'Cancelling...' : 'Yes, Cancel'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </main>
   );
 }
-

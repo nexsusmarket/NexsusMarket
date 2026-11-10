@@ -8,7 +8,7 @@ import {
   verifyDiscountCode as apiVerifyDiscountCode
 } from '../api/apiService';
 
-// Master list of bank offers
+// Master list of all possible bank offers
 const ALL_BANK_OFFERS = [
   { id: 'none', text: 'No offer', discount: 0, logoUrl: null },
   { id: 'ICICI5_MID', text: '5% ICICI', discount: 5, logoUrl: 'https://cdn.worldvectorlogo.com/logos/icici-bank-1.svg' },
@@ -33,449 +33,539 @@ function getBankOffersForPrice(price) {
 }
 
 export default function CartPage() {
-  const { userData, updateCartQty, removeFromCart, refreshUserData, showToast, isLoggedIn } = useAuth();
+  const { userData, updateCartQty, removeFromCart, refreshUserData, showToast } = useAuth();
   const navigate = useNavigate();
 
-  // Modals state
-  const [activeBankModal, setActiveBankModal] = useState({ open: false, product: null, offerId: null });
-  const [accountNumber, setAccountNumber] = useState('');
-  const [cvv, setCvv] = useState('');
+  // Custom Dropdown open state
+  const [openDropdownProduct, setOpenDropdownProduct] = useState(null);
 
-  const [studentModal, setStudentModal] = useState({ open: false, product: null });
+  // Bank offer modal
+  const [bankModalOpen, setBankModalOpen] = useState(false);
+  const [productForOffer, setProductForOffer] = useState(null);
+  const [offerIdForOffer, setOfferIdForOffer] = useState(null);
+  const [cardNumber, setCardNumber] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [bankError, setBankError] = useState('');
+
+  // Student discount modals
+  const [studentModalOpen, setStudentModalOpen] = useState(false);
+  const [verifyModalOpen, setVerifyModalOpen] = useState(false);
+  const [productForDiscount, setProductForDiscount] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
-  const [verifyModal, setVerifyModal] = useState({ open: false, product: null });
   const [verificationCode, setVerificationCode] = useState('');
-  const [modalLoading, setModalLoading] = useState(false);
+  const [studentError, setStudentError] = useState('');
+
+  const [loading, setLoading] = useState(false);
 
   const cartItems = userData?.cart || [];
-  const address = userData?.address;
+  const deliveryAddress = userData?.address || JSON.parse(localStorage.getItem('deliveryAddress') || '{}');
 
-  // Calculation logic
-  let subtotal = 0;
-  let totalDiscount = 0;
+  const deliveryLocationText = deliveryAddress?.city && deliveryAddress?.pincode 
+    ? `${deliveryAddress.city} - ${deliveryAddress.pincode}` 
+    : 'Select delivery address';
 
-  cartItems.forEach(item => {
-    const qty = item.quantity || 1;
-    const basePrice = item.price * qty;
-    subtotal += basePrice;
+  // Calculate totals
+  const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
-    // Student discount
-    if (item.discount) {
-      totalDiscount += (basePrice * (item.discount / 100));
+  const subtotal = cartItems.reduce((sum, item) => {
+    let itemPrice = item.price;
+    if (item.discount > 0) {
+      itemPrice *= (1 - item.discount / 100);
     }
-
-    // Bank offer discount
-    if (item.selectedOfferId && item.selectedOfferId !== 'none') {
-      const offer = ALL_BANK_OFFERS.find(o => o.id === item.selectedOfferId);
-      if (offer) {
-        if (offer.isFlat) {
-          totalDiscount += offer.discount;
-        } else {
-          totalDiscount += (basePrice * (offer.discount / 100));
-        }
-      }
+    const selectedOffer = ALL_BANK_OFFERS.find(o => o.id === item.selectedOfferId);
+    if (selectedOffer && selectedOffer.discount > 0) {
+      itemPrice = selectedOffer.isFlat 
+        ? Math.max(0, itemPrice - selectedOffer.discount) 
+        : itemPrice * (1 - selectedOffer.discount / 100);
     }
-  });
+    return sum + (itemPrice * (item.quantity || 1));
+  }, 0);
 
   const shipping = subtotal > 500 || subtotal === 0 ? 0 : 40;
-  const finalTotal = Math.max(0, subtotal - totalDiscount + shipping);
+  const total = subtotal + shipping;
+
+  // Quantity handlers
+  const handleQuantityMinus = async (productName, currentQty) => {
+    if (currentQty <= 1) {
+      await removeFromCart(productName);
+    } else {
+      await updateCartQty(productName, currentQty - 1);
+    }
+  };
+
+  const handleQuantityPlus = async (productName, currentQty) => {
+    await updateCartQty(productName, currentQty + 1);
+  };
+
+  const handleRemoveItem = async (productName) => {
+    await removeFromCart(productName);
+    showToast('Item removed from cart');
+  };
 
   // Bank offer selection
-  const handleOfferChange = (product, offerId) => {
-    if (offerId === 'none') {
-      apiUpdateCartOffer(product.name, 'none', null).then(() => {
-        refreshUserData();
-        showToast('Bank offer removed');
-      });
-      return;
-    }
-    // Open Account Number modal
-    setActiveBankModal({ open: true, product, offerId });
-  };
-
-  const handleBankModalSubmit = async (e) => {
-    e.preventDefault();
-    if (!accountNumber || accountNumber.length < 12) {
-      showToast('Please enter a valid card / account number.', true);
-      return;
-    }
-    setModalLoading(true);
-    try {
-      await apiUpdateCartOffer(activeBankModal.product.name, activeBankModal.offerId, accountNumber);
-      await refreshUserData();
-      showToast('Bank offer applied successfully!');
-      setActiveBankModal({ open: false, product: null, offerId: null });
-      setAccountNumber('');
+  const handleSelectOffer = async (product, offer) => {
+    setOpenDropdownProduct(null);
+    if (offer.id === 'none') {
+      try {
+        await apiUpdateCartOffer(product.name, 'none', null);
+        await refreshUserData();
+        showToast('Offer removed');
+      } catch (err) {
+        showToast(`Error removing offer: ${err.message}`, true);
+      }
+    } else {
+      setProductForOffer(product.name);
+      setOfferIdForOffer(offer.id);
+      setCardNumber('');
       setCvv('');
-    } catch (err) {
-      showToast(err.message, true);
-    } finally {
-      setModalLoading(false);
+      setBankError('');
+      setBankModalOpen(true);
     }
   };
 
-  // Student discount requests
+  const handleBankFormSubmit = async (e) => {
+    e.preventDefault();
+    if (cardNumber.length < 12) {
+      setBankError('Please enter a valid card number');
+      return;
+    }
+    setLoading(true);
+    try {
+      await apiUpdateCartOffer(productForOffer, offerIdForOffer, cardNumber);
+      await refreshUserData();
+      setBankModalOpen(false);
+      showToast('Offer applied successfully!');
+    } catch (err) {
+      setBankError(err.message || 'Error applying offer');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Student discount handlers
   const handleStudentEmailSubmit = async (e) => {
     e.preventDefault();
     if (!studentEmail.endsWith('.edu.in')) {
-      showToast('Must be a valid .edu.in college email', true);
+      setStudentError('Please enter a valid college email ending with .edu.in');
       return;
     }
-    setModalLoading(true);
+    setLoading(true);
+    setStudentError('');
     try {
-      const res = await apiRequestDiscountCode(studentEmail, studentModal.product.name);
-      showToast(res.message || 'Verification code sent to your email.');
-      const prod = studentModal.product;
-      setStudentModal({ open: false, product: null });
-      setVerifyModal({ open: true, product: prod });
+      await apiRequestDiscountCode(studentEmail, productForDiscount);
+      setStudentModalOpen(false);
+      setVerifyModalOpen(true);
+      showToast('Verification code sent to your email');
     } catch (err) {
-      showToast(err.message, true);
+      setStudentError(err.message || 'Failed to send code');
     } finally {
-      setModalLoading(false);
+      setLoading(false);
     }
   };
 
   const handleVerifyCodeSubmit = async (e) => {
     e.preventDefault();
-    if (!verificationCode) {
-      showToast('Please enter verification code', true);
+    if (!verificationCode || verificationCode.length < 6) {
+      showToast('Please enter a valid 6-digit code', true);
       return;
     }
-    setModalLoading(true);
+    setLoading(true);
     try {
-      await apiVerifyDiscountCode(verificationCode, verifyModal.product.name);
+      await apiVerifyDiscountCode(studentEmail, verificationCode, productForDiscount);
       await refreshUserData();
-      showToast('10% Student Discount applied!');
-      setVerifyModal({ open: false, product: null });
-      setVerificationCode('');
+      setVerifyModalOpen(false);
+      showToast('10% student discount applied!');
     } catch (err) {
-      showToast(err.message, true);
+      showToast(err.message || 'Invalid code', true);
     } finally {
-      setModalLoading(false);
+      setLoading(false);
     }
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-          <i className="fas fa-shopping-cart"></i>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Cart is Waiting</h2>
-        <p className="text-gray-500 mb-6">Sign in to view your saved cart items and enjoy fast checkout.</p>
-        <Link
-          to="/signin"
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-full shadow transition"
-        >
-          Sign In Now
-        </Link>
-      </div>
-    );
-  }
+  // Checkout handler
+  const handleProceedToCheckout = () => {
+    if (cartItems.length === 0) {
+      showToast('Error: Your cart is empty.', true);
+      return;
+    }
+    if (!deliveryAddress?.pincode) {
+      showToast('Error: Please add a delivery address.', true);
+      navigate('/address');
+      return;
+    }
+
+    const checkoutCartItems = cartItems.map(item => {
+      let finalPrice = item.price;
+      if (item.discount > 0) {
+        finalPrice *= (1 - item.discount / 100);
+      }
+      const selectedOffer = ALL_BANK_OFFERS.find(o => o.id === item.selectedOfferId);
+      if (selectedOffer && selectedOffer.discount > 0) {
+        finalPrice = selectedOffer.isFlat 
+          ? Math.max(0, finalPrice - selectedOffer.discount)
+          : finalPrice * (1 - selectedOffer.discount / 100);
+      }
+      return { ...item, pricePaid: finalPrice };
+    });
+
+    localStorage.setItem('checkoutReadyCart', JSON.stringify(checkoutCartItems));
+    localStorage.setItem('buyNowMode', 'false');
+    navigate('/checkout');
+  };
 
   return (
-    <div className="cart-body min-h-screen pb-16">
+    <div className="cart-body">
       {/* Delivery Bar */}
-      <div className="delivery-bar max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 bg-white border-b border-gray-200 flex items-center justify-between text-sm">
-        <div className="flex items-center space-x-2 text-gray-700">
-          <i className="fas fa-map-marker-alt text-indigo-600"></i>
-          <span className="text-gray-500">Deliver to:</span>
-          <span className="font-semibold text-gray-900">
-            {address?.city ? `${address.name || ''}, ${address.city} - ${address.pincode}` : 'No address selected'}
+      <div className="delivery-bar">
+        <div>
+          <span className="text-gray-600">Deliver to:</span>
+          <span id="delivery-location" className="font-bold text-gray-800 ml-2">
+            {deliveryLocationText}
           </span>
         </div>
         <Link
           to="/address"
-          className="text-indigo-600 hover:text-indigo-700 font-semibold text-xs border border-indigo-200 rounded-md px-3 py-1 hover:bg-indigo-50 transition"
+          className="border border-gray-300 px-4 py-1 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
         >
-          {address?.city ? 'Change Address' : 'Add Address'}
+          Change
         </Link>
       </div>
 
-      <div className="cart-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-6 flex items-center gap-3">
-          <i className="fas fa-shopping-bag text-indigo-600"></i>
-          Shopping Cart ({cartItems.length} items)
-        </h1>
+      <main className="cart-container">
+        <header className="cart-header">
+          <h1 className="cart-title">Your Cart</h1>
+        </header>
 
-        {cartItems.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
-            <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300 text-4xl">
-              <i className="fas fa-shopping-cart"></i>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Cart is Empty</h2>
-            <p className="text-gray-500 mb-6">Looks like you haven't added anything to your cart yet.</p>
-            <Link
-              to="/explore"
-              className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-full shadow-md transition"
-            >
-              Start Shopping <i className="fas fa-arrow-right ml-2"></i>
-            </Link>
-          </div>
-        ) : (
-          <div className="cart-layout-grid grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            {/* Cart Items List (2 cols) */}
-            <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item, idx) => {
-                const offers = getBankOffersForPrice(item.price);
+        <div className="cart-layout-grid">
+          <section className="cart-items-section">
+            {cartItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-12 bg-white rounded-lg shadow-md col-span-full">
+                <i className="fas fa-shopping-cart text-6xl text-gray-300 mb-6"></i>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Cart is Empty</h2>
+                <p className="text-gray-500 mb-6">Looks like you haven't added anything yet.</p>
+                <Link
+                  to="/explore"
+                  className="bg-purple-600 text-white px-6 py-3 rounded-full font-bold hover:bg-purple-700 transition"
+                >
+                  Continue Shopping
+                </Link>
+              </div>
+            ) : (
+              cartItems.map((product) => {
+                const availableOffers = getBankOffersForPrice(product.price);
+                const selectedOffer = availableOffers.find(o => o.id === product.selectedOfferId) || availableOffers[0];
+
+                const isEligibleForStudentDiscount = product.price >= 1000 && 
+                  ['laptop', 'mobile'].includes((product.category || '').toLowerCase());
+
+                let finalPrice = product.price;
+                if (product.discount > 0) {
+                  finalPrice *= (1 - product.discount / 100);
+                }
+                if (selectedOffer && selectedOffer.discount > 0) {
+                  finalPrice = selectedOffer.isFlat 
+                    ? Math.max(0, finalPrice - selectedOffer.discount)
+                    : finalPrice * (1 - selectedOffer.discount / 100);
+                }
+
                 return (
-                  <div
-                    key={idx}
-                    className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-6"
-                  >
-                    {/* Image */}
-                    <div className="w-28 h-28 flex-shrink-0 flex items-center justify-center p-2 bg-gray-50 rounded-xl">
+                  <div key={product.name} className="cart-item-row" data-product-name={encodeURIComponent(product.name)}>
+                    <div className="cart-product-details">
                       <img
-                        src={item.image}
-                        alt={item.name}
-                        className="max-h-full max-w-full object-contain cursor-pointer"
-                        onClick={() => navigate(`/product/${encodeURIComponent(item.name)}`)}
+                        src={product.image}
+                        alt={product.name}
+                        className="cart-product-image cursor-pointer"
+                        onClick={() => navigate(`/detail.html?name=${encodeURIComponent(product.name)}`)}
                       />
-                    </div>
-
-                    {/* Details */}
-                    <div className="flex-1 space-y-2 text-center md:text-left">
-                      <h3
-                        onClick={() => navigate(`/product/${encodeURIComponent(item.name)}`)}
-                        className="font-bold text-gray-900 text-base line-clamp-2 hover:text-indigo-600 cursor-pointer"
-                      >
-                        {item.name}
-                      </h3>
-                      <div className="flex items-center justify-center md:justify-start gap-3">
-                        <span className="font-extrabold text-lg text-gray-900">
-                          ₹{Number(item.price).toLocaleString('en-IN')}
-                        </span>
-                        {item.discount > 0 && (
-                          <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full">
-                            {item.discount}% Student Discount
-                          </span>
-                        )}
-                        {item.selectedOfferId && item.selectedOfferId !== 'none' && (
-                          <span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded-full">
-                            Bank Offer Active
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Bank Offers Dropdown */}
-                      <div className="flex flex-wrap items-center gap-2 pt-2">
-                        <span className="text-xs text-gray-500 font-medium">Bank Offer:</span>
-                        <select
-                          value={item.selectedOfferId || 'none'}
-                          onChange={(e) => handleOfferChange(item, e.target.value)}
-                          className="text-xs border border-gray-300 rounded-lg px-2.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      <div className="cart-product-meta">
+                        <h2
+                          className="cart-product-name cursor-pointer"
+                          onClick={() => navigate(`/detail.html?name=${encodeURIComponent(product.name)}`)}
                         >
-                          {offers.map(o => (
-                            <option key={o.id} value={o.id}>
-                              {o.text} {o.discount > 0 ? (o.isFlat ? `(Save ₹${o.discount})` : `(Save ${o.discount}%)`) : ''}
-                            </option>
-                          ))}
-                        </select>
+                          {product.name}
+                        </h2>
 
-                        {/* Student Discount Button */}
-                        {!item.discount && (
-                          <button
-                            onClick={() => setStudentModal({ open: true, product: item })}
-                            className="text-xs text-purple-600 hover:text-purple-700 font-semibold underline ml-2"
-                          >
-                            Student Discount?
-                          </button>
+                        {/* Student Discount Button / Badge */}
+                        {isEligibleForStudentDiscount && (
+                          product.discount > 0 ? (
+                            <span className="text-xs text-green-600 font-bold block mt-1">
+                              {product.discount}% Student Discount Applied!
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="student-discount-btn text-xs text-purple-600 hover:underline block mt-1 text-left"
+                              onClick={() => {
+                                setProductForDiscount(product.name);
+                                setStudentEmail('');
+                                setStudentError('');
+                                setStudentModalOpen(true);
+                              }}
+                            >
+                              Apply Student Discount
+                            </button>
+                          )
+                        )}
+
+                        {/* Custom Bank Offer Dropdown */}
+                        {product.price >= 1000 ? (
+                          <div className={`custom-select-wrapper ${openDropdownProduct === product.name ? 'open' : ''}`}>
+                            <div
+                              className="custom-select-trigger"
+                              onClick={() => setOpenDropdownProduct(openDropdownProduct === product.name ? null : product.name)}
+                            >
+                              {selectedOffer.logoUrl ? (
+                                <img src={selectedOffer.logoUrl} alt={selectedOffer.text} className="offer-logo" />
+                              ) : (
+                                <div className="offer-logo"></div>
+                              )}
+                              <span>{selectedOffer.text}</span>
+                              <i className="fas fa-chevron-down dropdown-arrow"></i>
+                            </div>
+
+                            <ul className="custom-options">
+                              {availableOffers.map((offer) => (
+                                <li
+                                  key={offer.id}
+                                  className={`custom-option ${offer.id === selectedOffer.id ? 'selected' : ''}`}
+                                  onClick={() => handleSelectOffer(product, offer)}
+                                >
+                                  {offer.logoUrl ? (
+                                    <img src={offer.logoUrl} alt={offer.text} className="offer-logo" />
+                                  ) : (
+                                    <div className="offer-logo"></div>
+                                  )}
+                                  <span>{offer.text}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-400 mt-2 p-1">No bank offers available</div>
+                        )}
+
+                        {/* Applied Account Number Note */}
+                        {product.accountNumber && product.selectedOfferId && product.selectedOfferId !== 'none' && (
+                          <div className="text-xs text-green-600 font-bold mt-1">
+                            Offer applied to A/C ****{product.accountNumber.slice(-4)}
+                          </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Quantity & Delete Controls */}
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="flex items-center border border-gray-200 rounded-full px-2 py-1">
+                    {/* Quantity Selector */}
+                    <div className="cart-quantity-selector">
+                      <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
                         <button
-                          onClick={() => updateCartQty(item.name, (item.quantity || 1) - 1)}
-                          className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition"
+                          type="button"
+                          className="quantity-minus px-3 py-2 text-red-500 hover:bg-red-100 transition"
+                          onClick={() => handleQuantityMinus(product.name, product.quantity || 1)}
                         >
-                          <i className="fas fa-minus text-xs"></i>
+                          <i className="fas fa-minus"></i>
                         </button>
-                        <span className="w-10 text-center font-bold text-sm">
-                          {item.quantity || 1}
-                        </span>
+                        <span className="quantity-display px-4 py-1 font-semibold">{product.quantity || 1}</span>
                         <button
-                          onClick={() => updateCartQty(item.name, (item.quantity || 1) + 1)}
-                          className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition"
+                          type="button"
+                          className="quantity-plus px-3 py-2 text-green-600 hover:bg-green-100 transition"
+                          onClick={() => handleQuantityPlus(product.name, product.quantity || 1)}
                         >
-                          <i className="fas fa-plus text-xs"></i>
+                          <i className="fas fa-plus"></i>
                         </button>
                       </div>
-
-                      <button
-                        onClick={() => removeFromCart(item.name)}
-                        className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-medium transition"
-                      >
-                        <i className="fas fa-trash-alt"></i> Remove
-                      </button>
                     </div>
+
+                    {/* Price Display */}
+                    <div className="cart-price-display">
+                      {finalPrice < product.price ? (
+                        <div className="flex flex-col items-end">
+                          <span className="text-red-500 font-bold text-lg">
+                            ₹{(finalPrice * (product.quantity || 1)).toFixed(2)}
+                          </span>
+                          <span className="text-gray-400 line-through text-sm">
+                            ₹{(product.price * (product.quantity || 1)).toFixed(2)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="font-bold text-lg">
+                          ₹{(product.price * (product.quantity || 1)).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Remove Item Button */}
+                    <button
+                      type="button"
+                      className="cart-remove-button"
+                      aria-label="Remove item"
+                      onClick={() => handleRemoveItem(product.name)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                      </svg>
+                    </button>
                   </div>
                 );
-              })}
-            </div>
+              })
+            )}
+          </section>
 
-            {/* Order Summary Sidebar (1 col) */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 sticky top-24 space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 border-b border-gray-100 pb-3">
-                Order Summary
-              </h2>
-
-              <div className="space-y-3 text-sm text-gray-600">
-                <div className="flex justify-between">
-                  <span>Subtotal ({cartItems.length} items)</span>
-                  <span className="font-semibold text-gray-900">₹{subtotal.toLocaleString('en-IN')}</span>
-                </div>
-
-                {totalDiscount > 0 && (
-                  <div className="flex justify-between text-emerald-600 font-medium">
-                    <span>Total Discounts Applied</span>
-                    <span>-₹{Math.round(totalDiscount).toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between">
-                  <span>Shipping Charges</span>
-                  <span className="font-semibold text-gray-900">
-                    {shipping === 0 ? <span className="text-emerald-600 uppercase font-bold">Free</span> : `₹${shipping}`}
-                  </span>
-                </div>
-
-                <hr className="border-gray-100 my-2" />
-
-                <div className="flex justify-between text-base font-extrabold text-gray-900">
-                  <span>Total Amount</span>
-                  <span className="text-indigo-600 text-xl">₹{Math.round(finalTotal).toLocaleString('en-IN')}</span>
-                </div>
+          {cartItems.length > 0 && (
+            <aside className="cart-summary">
+              <h2 className="cart-summary-title">Order Summary</h2>
+              <div className="cart-summary-line">
+                <span>Items</span>
+                <span id="cart-item-count">{totalItems}</span>
               </div>
-
+              <div className="cart-summary-line">
+                <span>Subtotal</span>
+                <span id="cart-subtotal">₹{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="cart-summary-line">
+                <span id="shipping-label">Shipping</span>
+                <span id="cart-shipping">{shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`}</span>
+              </div>
+              <hr className="cart-summary-divider" />
+              <div className="cart-summary-total">
+                <span>Total</span>
+                <span id="cart-total">₹{total.toFixed(2)}</span>
+              </div>
               <button
-                onClick={() => navigate('/checkout')}
-                className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2"
+                type="button"
+                className="cart-checkout-button"
+                onClick={handleProceedToCheckout}
               >
-                Proceed to Checkout <i className="fas fa-arrow-right"></i>
+                Proceed to Checkout
               </button>
-
               <Link
                 to="/explore"
-                className="block text-center text-xs text-indigo-600 hover:underline pt-2 font-semibold"
+                onClick={() => sessionStorage.setItem('isAddMoreMode', 'true')}
+                className="cart-continue-link"
               >
-                Continue Shopping
+                Add more
               </Link>
-            </div>
-          </div>
-        )}
-      </div>
+            </aside>
+          )}
+        </div>
+      </main>
 
-      {/* MODAL 1: Bank Account / Card Modal */}
-      {activeBankModal.open && (
-        <div className="modal-overlay" onClick={() => setActiveBankModal({ open: false, product: null, offerId: null })}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      {/* Student Email Modal */}
+      {studentModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
             <div className="modal-header">
-              <h2>Verify Bank Card</h2>
-              <button className="close-button" onClick={() => setActiveBankModal({ open: false, product: null, offerId: null })}>
+              <h2>Enter Student Email for Discount</h2>
+              <button
+                type="button"
+                className="close-button"
+                onClick={() => setStudentModalOpen(false)}
+              >
                 &times;
               </button>
             </div>
-            <p className="modal-prompt-text">
-              Enter your debit/credit card number to verify bank offer eligibility.
-            </p>
-            <form onSubmit={handleBankModalSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Card / Account Number</label>
-                <input
-                  type="text"
-                  placeholder="1234 5678 9101 1121"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2.5 text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">CVV / PIN</label>
-                <input
-                  type="password"
-                  placeholder="•••"
-                  maxLength={4}
-                  value={cvv}
-                  onChange={(e) => setCvv(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2.5 text-sm"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={modalLoading}
-                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition"
-              >
-                {modalLoading ? 'Verifying...' : 'Apply Offer'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: Student Discount Email */}
-      {studentModal.open && (
-        <div className="modal-overlay" onClick={() => setStudentModal({ open: false, product: null })}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Student Discount</h2>
-              <button className="close-button" onClick={() => setStudentModal({ open: false, product: null })}>&times;</button>
-            </div>
-            <p className="modal-prompt-text">
-              Enter your verified college email address ending with <strong>.edu.in</strong> to get an instant 10% discount.
-            </p>
-            <form onSubmit={handleStudentEmailSubmit} className="space-y-4">
+            <form onSubmit={handleStudentEmailSubmit} className="modal-body">
+              <p className="text-sm text-gray-600 mb-4">Enter your college email to get a 10% discount on this item.</p>
               <input
                 type="email"
-                placeholder="student@university.edu.in"
+                placeholder="College Mail (.edu.in)"
+                required
                 value={studentEmail}
                 onChange={(e) => setStudentEmail(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-2.5 text-sm"
-                required
+                className="w-full p-2 border rounded-md"
               />
+              {studentError && <p className="text-red-600 text-sm mt-1 mb-3">{studentError}</p>}
               <button
                 type="submit"
-                disabled={modalLoading}
-                className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition"
+                disabled={loading}
+                className="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 mt-4"
               >
-                {modalLoading ? 'Sending...' : 'Send Verification Code'}
+                {loading ? 'Processing...' : 'Get Verification Code'}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL 3: Student Verification Code */}
-      {verifyModal.open && (
-        <div className="modal-overlay" onClick={() => setVerifyModal({ open: false, product: null })}>
-          <div className="modal-content" onClick={(e) => setVerifyModal({ open: false, product: null })}>
+      {/* Verification Code Modal */}
+      {verifyModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
             <div className="modal-header">
-              <h2>Enter Discount Code</h2>
-              <button className="close-button" onClick={() => setVerifyModal({ open: false, product: null })}>&times;</button>
+              <h2>Enter Verification Code</h2>
+              <button
+                type="button"
+                className="close-button"
+                onClick={() => setVerifyModalOpen(false)}
+              >
+                &times;
+              </button>
             </div>
-            <p className="modal-prompt-text">
-              Enter the 6-digit verification code sent to your student email.
-            </p>
-            <form onSubmit={handleVerifyCodeSubmit} className="space-y-4">
+            <form onSubmit={handleVerifyCodeSubmit} className="modal-body">
+              <p className="text-sm text-gray-600 mb-4">Check your email for the 6-digit code we sent you.</p>
               <input
                 type="text"
-                placeholder="6-digit OTP"
+                placeholder="123456"
+                required
                 maxLength={6}
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-2.5 text-sm tracking-widest text-center font-bold text-lg"
-                required
+                className="w-full p-2 border rounded-md mb-4 text-center text-lg tracking-[5px]"
               />
               <button
                 type="submit"
-                disabled={modalLoading}
-                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition"
+                disabled={loading}
+                className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700"
               >
-                {modalLoading ? 'Applying...' : 'Apply 10% Discount'}
+                {loading ? 'Verifying...' : 'Verify and Apply Discount'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Account / Card Number Modal */}
+      {bankModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Enter Card Details</h2>
+              <button
+                type="button"
+                className="close-button"
+                onClick={() => setBankModalOpen(false)}
+              >
+                &times;
+              </button>
+            </div>
+            <form onSubmit={handleBankFormSubmit} className="modal-body">
+              <p className="text-sm text-gray-600 mb-4">Please enter your card number and CVV to apply this offer.</p>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="16-Digit Card Number"
+                  required
+                  maxLength={16}
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  className="w-full p-2 border rounded-md"
+                />
+                <input
+                  type="password"
+                  placeholder="3-Digit CVV"
+                  required
+                  maxLength={3}
+                  value={cvv}
+                  onChange={(e) => setCvv(e.target.value)}
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
+              {bankError && <p className="text-red-600 text-sm mt-2 mb-3">{bankError}</p>}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 mt-4"
+              >
+                {loading ? 'Applying...' : 'Apply Offer'}
               </button>
             </form>
           </div>
@@ -484,4 +574,3 @@ export default function CartPage() {
     </div>
   );
 }
-

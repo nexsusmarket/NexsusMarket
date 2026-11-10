@@ -7,7 +7,6 @@ export default function Navbar() {
   const { isLoggedIn, userName, wishlistCount, cartCount, logout, setAiOverlayOpen } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -15,259 +14,254 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e?.preventDefault();
     if (searchQuery.trim()) {
+      localStorage.setItem('lastSearch', searchQuery.trim());
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setMobileSearchOpen(false);
     }
   };
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Category navigation items
   const categories = [
     { label: 'Electronics', path: '/category/electronics' },
-    { label: 'Home & Appliances', path: '/category/home' },
-    { label: 'Mobiles', path: '/category/mobiles' },
+    { label: 'Home & Appliances', path: '/category/homeappliances' },
+    { label: 'Mobiles', path: '/category/mobile' },
     { label: 'Fashion', path: '/category/fashion' },
-    { label: 'Laptops', path: '/category/laptops' },
+    { label: 'Laptops', path: '/category/laptop' },
     { label: 'Grocery', path: '/category/grocery' },
     { label: 'Top Deals', path: '/deals' },
   ];
 
   const isCurrentActive = (catPath) => {
-    return location.pathname === catPath || location.pathname + location.search === catPath;
+    if (location.pathname === catPath) return true;
+    if (location.pathname === '/category' && location.search.includes(catPath.replace('/category/', ''))) return true;
+    if (catPath === '/deals' && (location.pathname === '/deals' || location.pathname === '/topDeals.html')) return true;
+    return false;
   };
 
   return (
-    <header className="sticky top-0 z-50 gradient-bg text-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="gradient-bg text-white shadow-lg sticky-header z-50">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 text-xl font-bold tracking-tight hover:opacity-90 transition">
-            <i className="fas fa-atom text-2xl logo-spin text-cyan-300"></i>
-            <span className="bg-gradient-to-r from-white via-indigo-100 to-yellow-200 bg-clip-text text-transparent">
+          <div className="flex items-center space-x-2">
+            <div className="text-2xl font-bold">
+              <i className="fas fa-atom logo-spin"></i>
+            </div>
+            <Link to="/" className="text-2xl font-bold tracking-tight">
               NexsusMarket
-            </span>
-          </Link>
+            </Link>
+          </div>
 
           {/* Desktop Search Bar */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-lg mx-8 relative">
+          <div className="hidden md:flex flex-1 mx-8">
+            <form onSubmit={handleSearch} className="relative w-full">
+              <input
+                id="searchInput"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search for products, brands and more"
+                className="w-full py-2 px-4 rounded-full text-gray-800 focus:outline-none search-bar"
+              />
+              <button
+                id="searchBtn"
+                type="submit"
+                className="absolute right-0 top-0 h-full px-4 bg-yellow-400 text-gray-800 rounded-r-full hover:bg-yellow-500 transition"
+                aria-label="Search"
+              >
+                <i className="fas fa-search"></i>
+              </button>
+            </form>
+          </div>
+
+          {/* Right Navigation */}
+          <nav id="main-navigation" className="flex items-center space-x-6">
+            <div className="flex items-center">
+              {/* AI Trigger */}
+              <button
+                id="nex-trigger"
+                type="button"
+                className="header-ai-trigger"
+                title="Ask NEX AI"
+                onClick={() => setAiOverlayOpen(true)}
+              >
+                <i className="fas fa-microphone"></i>
+              </button>
+
+              {isLoggedIn ? (
+                <div className="relative" ref={dropdownRef}>
+                  <div
+                    id="account-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDropdownOpen(!dropdownOpen);
+                    }}
+                    className="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-white/10 transition"
+                  >
+                    <i className="fas fa-user-circle text-2xl"></i>
+                    <span className="font-semibold text-sm">Account</span>
+                  </div>
+
+                  {dropdownOpen && (
+                    <div id="account-menu" className="absolute right-0 account-dropdown-menu-glass z-50">
+                      <div className="glass-background-blur"></div>
+                      <div className="dropdown-content-layer">
+                        <div className="px-4 py-3 border-b border-white/20">
+                          <p className="text-sm">Hello,</p>
+                          <p className="font-bold text-md truncate">{userName || 'User'}</p>
+                        </div>
+                        <div className="py-1">
+                          <Link
+                            to="/profile"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center px-4 py-2 text-sm hover:bg-white/10 rounded-md text-white"
+                          >
+                            <i className="fas fa-user-circle w-6 mr-2"></i>
+                            <span>My Profile</span>
+                          </Link>
+                          <Link
+                            to="/orders"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center px-4 py-2 text-sm hover:bg-white/10 rounded-md text-white"
+                          >
+                            <i className="fas fa-box-open w-6 mr-2"></i>
+                            <span>My Orders</span>
+                          </Link>
+                          <Link
+                            to="/delivered"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center px-4 py-2 text-sm hover:bg-white/10 rounded-md text-white"
+                          >
+                            <i className="fas fa-check-circle w-6 mr-2"></i>
+                            <span>Delivered Items</span>
+                          </Link>
+
+                          <Link
+                            to="/wishlist"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex justify-between items-center px-4 py-2 text-sm hover:bg-white/10 rounded-md text-white"
+                          >
+                            <span className="flex items-center">
+                              <i className="fas fa-heart w-6 mr-2"></i>My Wishlist
+                            </span>
+                            <span className="bg-yellow-400 text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                              {wishlistCount}
+                            </span>
+                          </Link>
+
+                          <Link
+                            to="/cart"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex justify-between items-center px-4 py-2 text-sm hover:bg-white/10 rounded-md text-white"
+                          >
+                            <span className="flex items-center">
+                              <i className="fas fa-shopping-cart w-6 mr-2"></i>My Cart
+                            </span>
+                            <span className="bg-yellow-400 text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                              {cartCount}
+                            </span>
+                          </Link>
+
+                          <hr className="my-1 border-white/20" />
+
+                          <button
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              logout();
+                              navigate('/signin');
+                            }}
+                            className="w-full text-left flex items-center px-4 py-2 text-sm hover:bg-white/10 rounded-md text-white"
+                          >
+                            <i className="fas fa-sign-out-alt w-6 mr-2"></i>
+                            <span>Logout</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <Link
+                    to="/signin"
+                    className="hidden md:block bg-white text-purple-700 px-4 py-2 rounded-md text-sm font-bold hover:bg-gray-100 transition mr-4"
+                  >
+                    Login
+                  </Link>
+
+                  <Link
+                    to="/wishlist"
+                    id="header-wishlist-icon"
+                    className="relative hover:text-yellow-300 transition nav-link mr-4"
+                    title="Wishlist"
+                  >
+                    <i className="fas fa-heart text-2xl"></i>
+                    <span className="wishlist-counter absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {wishlistCount}
+                    </span>
+                  </Link>
+
+                  <Link
+                    to="/cart"
+                    id="header-cart-icon"
+                    className="relative hover:text-yellow-300 transition nav-link"
+                    title="Cart"
+                  >
+                    <i className="fas fa-shopping-cart text-2xl"></i>
+                    <span className="cart-counter absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  </Link>
+                </>
+              )}
+            </div>
+          </nav>
+        </div>
+
+        {/* Mobile Search Bar */}
+        <div className="mt-3 md:hidden">
+          <form onSubmit={handleSearch} className="relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products, brands and more..."
-              className="w-full bg-white text-gray-800 rounded-full pl-5 pr-12 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 shadow-inner"
+              placeholder="Search NexsusMarket"
+              className="w-full py-2 px-4 rounded-full text-gray-800 focus:outline-none search-bar"
             />
-            <button
-              type="submit"
-              className="absolute right-1 top-1/2 -translate-y-1/2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full w-8 h-8 flex items-center justify-center transition"
-            >
-              <i className="fas fa-search text-xs"></i>
-            </button>
-          </form>
-
-          {/* Right Navigation */}
-          <div className="flex items-center space-x-3">
-            {/* Mobile Search Toggle */}
-            <button
-              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              className="md:hidden text-xl p-2 hover:text-yellow-300 transition"
-              title="Search"
-            >
+            <button type="submit" className="absolute right-0 top-0 h-full px-4 text-gray-800">
               <i className="fas fa-search"></i>
             </button>
-
-            {/* AI Assistant Mic Button */}
-            <button
-              onClick={() => setAiOverlayOpen(true)}
-              className="header-ai-trigger"
-              title="Ask NEX AI"
-            >
-              <i className="fas fa-microphone"></i>
-            </button>
-
-            {isLoggedIn ? (
-              /* Logged In: Account Dropdown */
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
-                >
-                  <i className="fas fa-user-circle text-2xl text-yellow-300"></i>
-                  <span className="font-semibold text-sm max-w-[120px] truncate hidden sm:inline">
-                    {userName || 'Account'}
-                  </span>
-                  <i className={`fas fa-chevron-down text-xs transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}></i>
-                </button>
-
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 text-gray-800 overflow-hidden z-50 animate-fadeIn">
-                    <div className="p-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-                      <p className="text-xs text-indigo-100">Welcome back,</p>
-                      <p className="font-bold text-base truncate">{userName}</p>
-                    </div>
-
-                    <div className="py-2">
-                      <Link
-                        to="/profile"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center px-4 py-2.5 text-sm hover:bg-indigo-50 text-gray-700 transition"
-                      >
-                        <i className="fas fa-user-circle w-6 text-indigo-500"></i>
-                        <span>My Profile</span>
-                      </Link>
-
-                      <Link
-                        to="/orders"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center px-4 py-2.5 text-sm hover:bg-indigo-50 text-gray-700 transition"
-                      >
-                        <i className="fas fa-box-open w-6 text-indigo-500"></i>
-                        <span>My Orders</span>
-                      </Link>
-
-                      <Link
-                        to="/delivered"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center px-4 py-2.5 text-sm hover:bg-indigo-50 text-gray-700 transition"
-                      >
-                        <i className="fas fa-check-circle w-6 text-green-500"></i>
-                        <span>Delivered Items</span>
-                      </Link>
-
-                      <Link
-                        to="/wishlist"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-indigo-50 text-gray-700 transition"
-                      >
-                        <div className="flex items-center">
-                          <i className="fas fa-heart w-6 text-red-500"></i>
-                          <span>My Wishlist</span>
-                        </div>
-                        <span className="bg-yellow-400 text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                          {wishlistCount}
-                        </span>
-                      </Link>
-
-                      <Link
-                        to="/cart"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-indigo-50 text-gray-700 transition"
-                      >
-                        <div className="flex items-center">
-                          <i className="fas fa-shopping-cart w-6 text-indigo-600"></i>
-                          <span>My Cart</span>
-                        </div>
-                        <span className="bg-yellow-400 text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                          {cartCount}
-                        </span>
-                      </Link>
-
-                      <hr className="my-1 border-gray-100" />
-
-                      <button
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          logout();
-                          navigate('/signin');
-                        }}
-                        className="w-full text-left flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition"
-                      >
-                        <i className="fas fa-sign-out-alt w-6"></i>
-                        <span>Logout</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Logged Out State */
-              <div className="flex items-center space-x-3">
-                <Link
-                  to="/signin"
-                  className="bg-white text-purple-700 px-4 py-1.5 rounded-full text-sm font-bold hover:bg-yellow-300 hover:text-gray-900 shadow transition"
-                >
-                  Login
-                </Link>
-
-                <Link
-                  to="/wishlist"
-                  className="relative p-2 hover:text-yellow-300 transition"
-                  title="Wishlist"
-                >
-                  <i className="fas fa-heart text-xl"></i>
-                  <span className="absolute -top-1 -right-1 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow">
-                    0
-                  </span>
-                </Link>
-
-                <Link
-                  to="/cart"
-                  className="relative p-2 hover:text-yellow-300 transition"
-                  title="Cart"
-                >
-                  <i className="fas fa-shopping-cart text-xl"></i>
-                  <span className="absolute -top-1 -right-1 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow">
-                    0
-                  </span>
-                </Link>
-              </div>
-            )}
-          </div>
+          </form>
         </div>
 
-        {/* Mobile Search Bar Dropdown */}
-        {mobileSearchOpen && (
-          <form onSubmit={handleSearch} className="md:hidden pb-3 pt-1">
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
-                className="w-full bg-white text-gray-800 rounded-full pl-4 pr-10 py-2 text-sm focus:outline-none shadow"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="absolute right-1 top-1/2 -translate-y-1/2 bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center"
-              >
-                <i className="fas fa-search text-xs"></i>
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Categories Bar */}
-        <nav className="flex items-center space-x-6 pb-2 overflow-x-auto text-sm scrollbar-none">
+        {/* Category Navigation Bar */}
+        <div className="hidden md:flex items-center space-x-8 mt-4 pb-1 text-sm font-medium overflow-x-auto opacity-90">
           {categories.map((cat) => {
             const active = isCurrentActive(cat.path);
             return (
               <Link
                 key={cat.path}
                 to={cat.path}
-                className={`whitespace-nowrap transition-all duration-200 py-1 ${
+                className={`nav-item transition ${
                   active
                     ? 'text-yellow-300 font-bold border-b-2 border-yellow-300 pb-0.5'
-                    : 'text-white/90 hover:text-yellow-300'
+                    : 'text-white hover:text-yellow-300'
                 }`}
               >
                 {cat.label}
               </Link>
             );
           })}
-        </nav>
+        </div>
       </div>
     </header>
   );
 }
-

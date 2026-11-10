@@ -2,150 +2,154 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { sendSupportTicket as apiSendSupportTicket } from '../api/apiService';
+import { sendSupportTicket } from '../api/apiService';
 
 export default function CustomerServicePage() {
-  const { userData, isLoggedIn, showToast } = useAuth();
+  const { userData, userName, isLoggedIn, showToast } = useAuth();
   const [category, setCategory] = useState('');
   const [message, setMessage] = useState('');
+  const [feedback, setFeedback] = useState({ text: '', isError: false });
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!category || !message.trim()) {
-      showToast('Please select a category and enter your message.', true);
+    if (!category) {
+      setFeedback({ text: 'Please select an issue category.', isError: true });
       return;
     }
+    if (!message.trim()) {
+      setFeedback({ text: 'Please provide details about your issue.', isError: true });
+      return;
+    }
+
     setSubmitting(true);
+    setFeedback({ text: '', isError: false });
     try {
-      await apiSendSupportTicket(category, message.trim());
-      setSubmitted(true);
-      showToast('Support ticket sent successfully!');
+      await sendSupportTicket(category, message.trim());
+      setFeedback({
+        text: 'Thank you! Your support request has been submitted. We will contact you soon.',
+        isError: false
+      });
       setMessage('');
       setCategory('');
+      showToast('Support ticket submitted!');
     } catch (err) {
-      showToast(err.message || 'Error submitting ticket', true);
+      setFeedback({
+        text: err.message || 'Error submitting message. Please try again.',
+        isError: true
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* Page Header */}
-      <div className="text-center space-y-2">
-        <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-3xl shadow-sm">
-          <i className="fas fa-headset"></i>
-        </div>
-        <h1 className="text-3xl font-extrabold text-gray-900">
-          NexsusMarket Customer Helpdesk
-        </h1>
-        <p className="text-gray-500 text-sm max-w-lg mx-auto">
-          Need help with an order, refund, delivery, or product query? Our priority support team is available 24/7.
-        </p>
-      </div>
-
+    <main className="container mx-auto px-4 py-12">
       {!isLoggedIn ? (
-        <div className="bg-white rounded-3xl p-10 text-center shadow-sm border border-gray-100 max-w-md mx-auto space-y-4">
-          <i className="fas fa-user-lock text-4xl text-gray-400"></i>
-          <h2 className="text-xl font-bold text-gray-800">Login to Contact Support</h2>
-          <p className="text-gray-500 text-sm">
-            Please log in to your registered NexsusMarket account so we can automatically link your orders and account history.
-          </p>
+        <div id="logged-out-view" className="text-center max-w-lg mx-auto bg-white p-8 rounded-lg shadow-md">
+          <i className="fas fa-sign-in-alt text-5xl text-purple-500 mb-4"></i>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Please Sign In</h1>
+          <p className="text-gray-600 mb-6">You need to be logged in to contact our customer support team.</p>
           <Link
             to="/signin"
-            className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-full shadow transition"
+            className="bg-purple-600 text-white px-8 py-3 rounded-full font-bold hover:bg-purple-700 transition-transform transform hover:scale-105 inline-block"
           >
-            Sign In Now
+            Sign In to Continue
           </Link>
         </div>
-      ) : submitted ? (
-        <div className="bg-white rounded-3xl p-10 text-center shadow-sm border border-emerald-100 max-w-md mx-auto space-y-4">
-          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
-            <i className="fas fa-check"></i>
-          </div>
-          <h2 className="text-xl font-bold text-gray-900">Ticket Submitted Successfully!</h2>
-          <p className="text-gray-500 text-sm">
-            Our support desk has received your ticket. A confirmation has been logged and an agent will reply to your registered email (<strong>{userData?.email}</strong>) within 2-4 hours.
-          </p>
-          <button
-            onClick={() => setSubmitted(false)}
-            className="text-xs text-indigo-600 font-bold hover:underline"
-          >
-            Submit Another Ticket
-          </button>
-        </div>
       ) : (
-        <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-gray-200">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* User Meta Readonly */}
-            <div className="bg-gray-50 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-gray-700 border border-gray-100">
-              <div>
-                <span className="text-gray-400 block font-semibold uppercase">Account Name</span>
-                <span className="font-bold text-sm text-gray-900">{userData?.name}</span>
-              </div>
-              <div>
-                <span className="text-gray-400 block font-semibold uppercase">Registered Email</span>
-                <span className="font-bold text-sm text-gray-900">{userData?.email}</span>
-              </div>
+        <div id="logged-in-view" className="max-w-2xl mx-auto">
+          <div className="bg-white p-8 rounded-xl shadow-lg">
+            <div className="text-center mb-8">
+              <i className="fas fa-headset text-5xl text-purple-500 mb-4"></i>
+              <h1 className="text-3xl font-bold text-gray-800">Contact Customer Support</h1>
+              <p className="text-gray-500 mt-2">We're here to help. Please fill out the form below.</p>
             </div>
 
-            {/* Issue Category */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase mb-2">
-                Issue Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                required
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+            <form id="support-form" onSubmit={handleSubmit}>
+              <div className="mb-6">
+                <label htmlFor="user-info" className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Information
+                </label>
+                <div className="flex items-center space-x-4 bg-gray-100 p-3 rounded-md">
+                  <i className="fas fa-user-check text-gray-500"></i>
+                  <div>
+                    <p id="user-name" className="font-semibold text-gray-800">
+                      {userName || 'Valued Customer'}
+                    </p>
+                    <p id="user-email" className="text-sm text-gray-500">
+                      {userData?.email || userData?.phone || ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="issue-category" className="block text-sm font-medium text-gray-700 mb-2">
+                  How can we help you?
+                </label>
+                <div className="relative">
+                  <i className="fas fa-list-alt absolute left-3 top-3.5 text-gray-400"></i>
+                  <select
+                    id="issue-category"
+                    name="category"
+                    required
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 transition"
+                  >
+                    <option value="" disabled>Select an issue category...</option>
+                    <option value="Payment Issues">Payment Issues</option>
+                    <option value="Shipping & Delivery">Shipping & Delivery</option>
+                    <option value="Coupon & Discount Problems">Coupon & Discount Problems</option>
+                    <option value="Website Glitches or Errors">Website Glitches or Errors</option>
+                    <option value="Product Questions">Product Questions</option>
+                    <option value="Account Issues">Account Issues</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="issue-message" className="block text-sm font-medium text-gray-700 mb-2">
+                  Please describe your issue
+                </label>
+                <textarea
+                  id="issue-message"
+                  name="message"
+                  rows="6"
+                  required
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Provide as much detail as possible..."
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 transition"
+                ></textarea>
+              </div>
+
+              <button
+                type="submit"
+                id="submit-btn"
+                disabled={submitting}
+                className="w-full bg-purple-600 text-white py-3 rounded-md font-bold hover:bg-purple-700 transition flex items-center justify-center space-x-2"
               >
-                <option value="">Select an issue category</option>
-                <option value="Payment Issue">Payment or Refund Failure</option>
-                <option value="Shipping & Delivery">Shipping & Tracking Delay</option>
-                <option value="Coupon or Discount">Coupon / Student Discount Issue</option>
-                <option value="Product Quality">Damaged / Defective Product</option>
-                <option value="Account Management">Account Login or Password</option>
-                <option value="Other Query">General Inquiry or Feedback</option>
-              </select>
-            </div>
+                <i className="fas fa-paper-plane"></i>
+                <span>{submitting ? 'Sending...' : 'Send Message'}</span>
+              </button>
 
-            {/* Message */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase mb-2">
-                Detailed Message <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                required
-                rows={5}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Describe your issue with relevant details like Order ID or product name..."
-                className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-sm rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <i className="fas fa-spinner fa-spin"></i> Submitting Ticket...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-paper-plane"></i> Submit Ticket
-                </>
+              {feedback.text && (
+                <div
+                  id="form-feedback"
+                  className={`mt-4 text-center text-sm font-semibold ${
+                    feedback.isError ? 'text-red-500' : 'text-green-600'
+                  }`}
+                >
+                  {feedback.text}
+                </div>
               )}
-            </button>
-          </form>
+            </form>
+          </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }
-

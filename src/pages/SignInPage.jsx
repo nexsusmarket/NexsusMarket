@@ -1,6 +1,6 @@
 // client/src/pages/SignInPage.jsx
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   signIn as apiSignIn, 
@@ -19,13 +19,14 @@ export default function SignInPage() {
   const [mode, setMode] = useState('signin');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', isError: false });
+  const [showPassword, setShowPassword] = useState(false);
 
   // Sign In fields
   const [signinIdentifier, setSigninIdentifier] = useState('');
   const [signinPassword, setSigninPassword] = useState('');
 
   // Sign Up fields
-  const [signupStage, setSignupStage] = useState(1); // 1: details, 2: otp & password
+  const [signupStage, setSignupStage] = useState(1);
   const [signupName, setSignupName] = useState('');
   const [signupPhone, setSignupPhone] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
@@ -33,7 +34,7 @@ export default function SignInPage() {
   const [signupPassword, setSignupPassword] = useState('');
 
   // Forgot Password fields
-  const [forgotStage, setForgotStage] = useState(1); // 1: email, 2: otp, 3: new pass
+  const [forgotStage, setForgotStage] = useState(1);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotOtp, setForgotOtp] = useState('');
   const [forgotNewPassword, setForgotNewPassword] = useState('');
@@ -43,7 +44,7 @@ export default function SignInPage() {
     setMessage({ text, isError });
   };
 
-  // 1. Handle Sign In
+  // 1. Sign In Submit
   const handleSignInSubmit = async (e) => {
     e.preventDefault();
     if (!signinIdentifier || !signinPassword) {
@@ -64,7 +65,7 @@ export default function SignInPage() {
     }
   };
 
-  // 2. Handle Sign Up - Step 1: Send OTP
+  // 2. Sign Up - Send OTP
   const handleSendSignupOtp = async (e) => {
     e.preventDefault();
     if (!signupName.trim() || !signupPhone.trim() || !signupEmail.trim()) {
@@ -92,7 +93,7 @@ export default function SignInPage() {
     }
   };
 
-  // 2. Handle Sign Up - Step 2: Verify & Create
+  // 2. Sign Up - Create Account
   const handleCreateAccount = async (e) => {
     e.preventDefault();
     if (!signupOtp.trim() || !signupPassword) {
@@ -113,9 +114,8 @@ export default function SignInPage() {
         password: signupPassword,
         otp: signupOtp.trim()
       });
-      // Auto login with phone as token
       login(signupPhone.trim(), signupName.trim());
-      showToast('Account created successfully! Welcome to NexsusMarket.');
+      showToast('Account created successfully!');
       navigate('/');
     } catch (err) {
       displayMessage(err.message || 'Error creating account.', true);
@@ -124,7 +124,7 @@ export default function SignInPage() {
     }
   };
 
-  // 3. Handle Forgot Password - Stage 1
+  // 3. Forgot Password - Send Code
   const handleForgotRequestOtp = async (e) => {
     e.preventDefault();
     if (!forgotEmail.trim()) {
@@ -144,30 +144,30 @@ export default function SignInPage() {
     }
   };
 
-  // 3. Handle Forgot Password - Stage 2
+  // 3. Forgot Password - Verify Code
   const handleForgotVerifyOtp = async (e) => {
     e.preventDefault();
     if (!forgotOtp.trim()) {
-      displayMessage('Please enter the OTP.', true);
+      displayMessage('Please enter the verification code.', true);
       return;
     }
     setLoading(true);
     displayMessage('');
     try {
-      const data = await apiVerifyOtp(forgotEmail.trim(), forgotOtp.trim());
-      displayMessage(data.message || 'OTP verified. Set new password.');
+      await apiVerifyOtp(forgotEmail.trim(), forgotOtp.trim());
+      displayMessage('Code verified. Set your new password.');
       setForgotStage(3);
     } catch (err) {
-      displayMessage(err.message || 'Incorrect verification code.', true);
+      displayMessage(err.message || 'Invalid or expired code.', true);
     } finally {
       setLoading(false);
     }
   };
 
-  // 3. Handle Forgot Password - Stage 3
+  // 3. Forgot Password - Reset Password
   const handleForgotResetPassword = async (e) => {
     e.preventDefault();
-    if (forgotNewPassword.length < 6) {
+    if (!forgotNewPassword || forgotNewPassword.length < 6) {
       displayMessage('Password must be at least 6 characters.', true);
       return;
     }
@@ -178,357 +178,347 @@ export default function SignInPage() {
     setLoading(true);
     displayMessage('');
     try {
-      const data = await apiVerifyOtpAndReset({
+      await apiVerifyOtpAndReset({
         email: forgotEmail.trim(),
         otp: forgotOtp.trim(),
         newPassword: forgotNewPassword
       });
-      showToast(data.message || 'Password reset successfully! Please sign in.');
+      showToast('Password reset successfully! Please sign in.');
       setMode('signin');
-      setForgotStage(1);
+      displayMessage('Password reset successfully! Please sign in.');
     } catch (err) {
-      displayMessage(err.message || 'Error resetting password.', true);
+      displayMessage(err.message || 'Failed to reset password.', true);
     } finally {
       setLoading(false);
     }
   };
 
+  let formTitle = 'Welcome Back';
+  let formDescription = 'Sign in to access your NexsusMarket account';
+  let toggleText = "Don't have an account?";
+  let toggleLinkText = 'Sign Up';
+
+  if (mode === 'signup') {
+    formTitle = 'Create Account';
+    formDescription = 'Join the future of shopping today';
+    toggleText = 'Already have an account?';
+    toggleLinkText = 'Sign In';
+  } else if (mode === 'forgot') {
+    formTitle = 'Reset Password';
+    formDescription = 'Recover your account access.';
+    toggleText = 'Remembered it?';
+    toggleLinkText = 'Sign In';
+  }
+
+  const handleToggle = (e) => {
+    e.preventDefault();
+    setMessage({ text: '', isError: false });
+    if (mode === 'signin') {
+      setMode('signup');
+      setSignupStage(1);
+    } else {
+      setMode('signin');
+      setForgotStage(1);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900">
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl text-white">
-        {/* Brand Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2 text-2xl font-black tracking-tight text-white hover:opacity-90 transition mb-2">
-            <i className="fas fa-atom text-3xl text-cyan-400 logo-spin"></i>
-            <span className="bg-gradient-to-r from-white via-indigo-200 to-yellow-300 bg-clip-text text-transparent">
-              NexsusMarket
-            </span>
-          </Link>
-          <h2 className="text-xl font-bold mt-2">
-            {mode === 'signin' && 'Sign In to Your Account'}
-            {mode === 'signup' && 'Create Your Account'}
-            {mode === 'forgot' && 'Reset Password'}
+    <div className="signin-page-wrapper">
+      <div className="signin-container">
+        {/* Header Icon & Title */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-500/20 text-purple-300 text-xl mb-2 border border-purple-500/30">
+            <i className="fas fa-atom logo-spin"></i>
+          </div>
+          <h2 id="form-title" className="text-2xl font-bold">
+            {formTitle}
           </h2>
-          <p className="text-gray-300 text-xs mt-1">
-            {mode === 'signin' && 'Enter your credentials to continue shopping'}
-            {mode === 'signup' && 'Join thousands of smart shoppers today'}
-            {mode === 'forgot' && 'Recover access to your account'}
+          <p id="form-description" className="text-xs text-gray-300 mt-1">
+            {formDescription}
           </p>
         </div>
 
-        {/* Global Feedback Message */}
-        {message.text && (
-          <div className={`p-3 rounded-xl mb-6 text-sm font-medium ${
-            message.isError 
-              ? 'bg-red-500/20 border border-red-500/40 text-red-200' 
-              : 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-200'
-          }`}>
-            <i className={`fas ${message.isError ? 'fa-exclamation-triangle' : 'fa-check-circle'} mr-2`}></i>
-            {message.text}
-          </div>
-        )}
-
-        {/* MODE 1: SIGN IN */}
+        {/* 1. Sign In Form */}
         {mode === 'signin' && (
-          <form onSubmit={handleSignInSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-300 uppercase mb-1">
-                Phone Number or Email
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                  <i className="fas fa-user text-sm"></i>
-                </span>
-                <input
-                  type="text"
-                  value={signinIdentifier}
-                  onChange={(e) => setSigninIdentifier(e.target.value)}
-                  placeholder="9876543210 or user@example.com"
-                  className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  required
-                />
-              </div>
+          <form id="signin-form" className="space-y-4" onSubmit={handleSignInSubmit}>
+            <div className="input-group">
+              <input
+                id="signin-identifier"
+                type="text"
+                required
+                placeholder="Mobile Number or Email"
+                value={signinIdentifier}
+                onChange={(e) => setSigninIdentifier(e.target.value)}
+              />
+              <i className="fas fa-user input-icon"></i>
             </div>
 
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-semibold text-gray-300 uppercase">
-                  Password
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('forgot');
-                    setMessage({ text: '', isError: false });
-                  }}
-                  className="text-xs text-yellow-300 hover:underline"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                  <i className="fas fa-lock text-sm"></i>
-                </span>
-                <input
-                  type="password"
-                  value={signinPassword}
-                  onChange={(e) => setSigninPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  required
-                />
-              </div>
+            <div className="input-group">
+              <input
+                id="signin-password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                placeholder="Password"
+                value={signinPassword}
+                onChange={(e) => setSigninPassword(e.target.value)}
+              />
+              <i className="fas fa-lock input-icon"></i>
+              <i
+                className={`fas ${showPassword ? 'fa-eye' : 'fa-eye-slash'} toggle-password-icon`}
+                onClick={() => setShowPassword(!showPassword)}
+              ></i>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition duration-200 mt-2 flex items-center justify-center"
-            >
-              {loading ? (
-                <i className="fas fa-spinner fa-spin mr-2"></i>
-              ) : (
-                'Sign In'
-              )}
+            <div className="flex items-center justify-between text-xs">
+              <a
+                href="#"
+                id="forgot-password-link-main"
+                className="text-purple-300 hover:text-white transition"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMode('forgot');
+                  setForgotStage(1);
+                  setMessage({ text: '', isError: false });
+                }}
+              >
+                Forgot Password?
+              </a>
+            </div>
+
+            <button type="submit" className="submit-btn w-full mt-2" disabled={loading}>
+              {loading ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
         )}
 
-        {/* MODE 2: SIGN UP */}
+        {/* 2. Sign Up Form */}
         {mode === 'signup' && (
-          <div>
+          <form
+            id="signup-form"
+            className="space-y-4"
+            onSubmit={signupStage === 1 ? handleSendSignupOtp : handleCreateAccount}
+          >
             {signupStage === 1 ? (
-              <form onSubmit={handleSendSignupOtp} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 uppercase mb-1">Full Name</label>
+              <div id="signup-details-stage" className="space-y-4">
+                <div className="input-group">
                   <input
+                    id="signup-name"
                     type="text"
+                    required
+                    placeholder="Full Name"
                     value={signupName}
                     onChange={(e) => setSignupName(e.target.value)}
-                    placeholder="John Doe"
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                    required
                   />
+                  <i className="fas fa-user input-icon"></i>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 uppercase mb-1">Mobile Number (10 digits)</label>
+                <div className="input-group">
                   <input
+                    id="signup-phone"
                     type="tel"
+                    required
+                    pattern="[0-9]{10}"
+                    maxLength="10"
+                    placeholder="Mobile Number (10 digits)"
                     value={signupPhone}
                     onChange={(e) => setSignupPhone(e.target.value)}
-                    placeholder="9876543210"
-                    maxLength={10}
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                    required
                   />
+                  <i className="fas fa-phone input-icon"></i>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 uppercase mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
-                    placeholder="john@example.com"
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                    required
-                  />
+                <div className="flex gap-2">
+                  <div className="input-group flex-grow mb-0">
+                    <input
+                      id="signup-email"
+                      type="email"
+                      required
+                      placeholder="Email Address"
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
+                    />
+                    <i className="fas fa-envelope input-icon"></i>
+                  </div>
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg transition duration-200 mt-2 flex items-center justify-center"
-                >
-                  {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : 'Send Verification Code'}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleCreateAccount} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 uppercase mb-1">Verification Code (OTP)</label>
-                  <input
-                    type="text"
-                    value={signupOtp}
-                    onChange={(e) => setSignupOtp(e.target.value)}
-                    placeholder="6-digit code"
-                    maxLength={6}
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 tracking-widest text-center font-bold text-lg"
-                    required
-                  />
-                  <p className="text-xs text-gray-400 mt-1">Sent to {signupEmail}</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 uppercase mb-1">Create Password</label>
-                  <input
-                    type="password"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    placeholder="Min 6 characters"
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg transition duration-200 mt-2 flex items-center justify-center"
-                >
-                  {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : 'Verify & Create Account'}
-                </button>
 
                 <button
                   type="button"
-                  onClick={() => setSignupStage(1)}
-                  className="w-full text-center text-xs text-gray-400 hover:text-white underline mt-2"
+                  id="send-otp-btn"
+                  onClick={handleSendSignupOtp}
+                  disabled={loading}
+                  className="w-full !bg-gray-800/80 hover:!bg-gray-700 !text-gray-100 !shadow-none border border-gray-500"
                 >
-                  Back to edit details
+                  {loading ? 'Sending Code...' : 'Send Code'}
                 </button>
-              </form>
-            )}
-          </div>
-        )}
-
-        {/* MODE 3: FORGOT PASSWORD */}
-        {mode === 'forgot' && (
-          <div>
-            {forgotStage === 1 && (
-              <form onSubmit={handleForgotRequestOtp} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 uppercase mb-1">Your Registered Email</label>
-                  <input
-                    type="email"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder="user@example.com"
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                    required
-                  />
+              </div>
+            ) : (
+              <div id="signup-verification-stage" className="space-y-4">
+                <div className="p-2 bg-purple-500/20 border border-purple-500/30 rounded-lg text-xs text-purple-100 text-center">
+                  Code sent to your email
                 </div>
 
+                <div className="input-group">
+                  <input
+                    id="signup-otp"
+                    type="text"
+                    required
+                    placeholder="Enter 6-Digit Code"
+                    value={signupOtp}
+                    onChange={(e) => setSignupOtp(e.target.value)}
+                  />
+                  <i className="fas fa-key input-icon"></i>
+                </div>
+
+                <div className="input-group">
+                  <input
+                    id="signup-password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength="6"
+                    placeholder="Create Password (min. 6 chars)"
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                  />
+                  <i className="fas fa-lock input-icon"></i>
+                  <i
+                    className={`fas ${showPassword ? 'fa-eye' : 'fa-eye-slash'} toggle-password-icon`}
+                    onClick={() => setShowPassword(!showPassword)}
+                  ></i>
+                </div>
+
+                <div>
+                  <button type="submit" id="create-account-btn" className="w-full mt-2" disabled={loading}>
+                    {loading ? 'Creating...' : 'Create Account'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </form>
+        )}
+
+        {/* 3. Forgot Password Form */}
+        {mode === 'forgot' && (
+          <form id="forgot-password-form" className="space-y-4">
+            {forgotStage === 1 && (
+              <div id="email-stage" className="space-y-4">
+                <div className="input-group">
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    required
+                    placeholder="Enter your registered email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                  />
+                  <i className="fas fa-envelope input-icon"></i>
+                </div>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleForgotRequestOtp}
                   disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition duration-200 mt-2 flex items-center justify-center"
+                  className="w-full mt-2"
                 >
-                  {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : 'Send Reset Code'}
+                  {loading ? 'Sending...' : 'Send Reset Code'}
                 </button>
-              </form>
+              </div>
             )}
 
             {forgotStage === 2 && (
-              <form onSubmit={handleForgotVerifyOtp} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 uppercase mb-1">Enter Reset OTP</label>
+              <div id="otp-verification-stage" className="space-y-4">
+                <div className="input-group">
                   <input
+                    id="forgot-otp"
                     type="text"
+                    required
+                    placeholder="Enter 6-Digit Code"
                     value={forgotOtp}
                     onChange={(e) => setForgotOtp(e.target.value)}
-                    placeholder="6-digit code"
-                    maxLength={6}
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 tracking-widest text-center font-bold text-lg"
-                    required
                   />
+                  <i className="fas fa-key input-icon"></i>
                 </div>
-
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleForgotVerifyOtp}
                   disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition duration-200 mt-2 flex items-center justify-center"
+                  className="w-full mt-2"
                 >
-                  {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : 'Verify Code'}
+                  {loading ? 'Verifying...' : 'Verify Code'}
                 </button>
-              </form>
+              </div>
             )}
 
             {forgotStage === 3 && (
-              <form onSubmit={handleForgotResetPassword} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 uppercase mb-1">New Password</label>
+              <div id="new-password-stage" className="space-y-4">
+                <div className="input-group">
                   <input
-                    type="password"
+                    id="forgot-new-password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength="6"
+                    placeholder="New Password"
                     value={forgotNewPassword}
                     onChange={(e) => setForgotNewPassword(e.target.value)}
-                    placeholder="Min 6 characters"
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                    required
                   />
+                  <i className="fas fa-lock input-icon"></i>
+                  <i
+                    className={`fas ${showPassword ? 'fa-eye' : 'fa-eye-slash'} toggle-password-icon`}
+                    onClick={() => setShowPassword(!showPassword)}
+                  ></i>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 uppercase mb-1">Confirm New Password</label>
+                <div className="input-group">
                   <input
-                    type="password"
+                    id="forgot-confirm-password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Confirm New Password"
                     value={forgotConfirmPassword}
                     onChange={(e) => setForgotConfirmPassword(e.target.value)}
-                    placeholder="Repeat password"
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                    required
                   />
+                  <i className="fas fa-check-circle input-icon"></i>
+                  <i
+                    className={`fas ${showPassword ? 'fa-eye' : 'fa-eye-slash'} toggle-password-icon`}
+                    onClick={() => setShowPassword(!showPassword)}
+                  ></i>
                 </div>
 
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleForgotResetPassword}
                   disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg transition duration-200 mt-2 flex items-center justify-center"
+                  className="w-full mt-2"
                 >
-                  {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : 'Reset Password'}
+                  {loading ? 'Resetting...' : 'Reset Password'}
                 </button>
-              </form>
+              </div>
             )}
-
-            <button
-              type="button"
-              onClick={() => {
-                setMode('signin');
-                setMessage({ text: '', isError: false });
-              }}
-              className="w-full text-center text-xs text-yellow-300 hover:underline mt-4"
-            >
-              Back to Sign In
-            </button>
-          </div>
+          </form>
         )}
 
-        {/* Mode Switch Footer */}
-        <div className="mt-8 pt-6 border-t border-white/10 text-center text-xs text-gray-300">
-          {mode === 'signin' ? (
-            <p>
-              Don't have an account?{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('signup');
-                  setSignupStage(1);
-                  setMessage({ text: '', isError: false });
-                }}
-                className="font-bold text-yellow-300 hover:underline"
-              >
-                Sign Up
-              </button>
-            </p>
-          ) : (
-            <p>
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('signin');
-                  setMessage({ text: '', isError: false });
-                }}
-                className="font-bold text-yellow-300 hover:underline"
-              >
-                Sign In
-              </button>
-            </p>
-          )}
+        {/* Message */}
+        <div
+          id="message"
+          className={`text-center text-xs font-semibold min-h-[16px] mt-3 ${
+            message.isError ? 'text-red-400' : 'text-purple-300'
+          }`}
+        >
+          {message.text}
+        </div>
+
+        {/* Toggle Footer */}
+        <div className="mt-6 pt-4 border-t border-gray-500/30 text-center">
+          <p id="toggle-container" className="text-xs text-gray-300">
+            <span id="signin-toggle-text">{toggleText}</span>
+            <a
+              href="#"
+              id="toggle-link"
+              onClick={handleToggle}
+              className="font-bold text-purple-300 hover:text-white ml-1 underline decoration-2 underline-offset-4"
+            >
+              {toggleLinkText}
+            </a>
+          </p>
         </div>
       </div>
     </div>
   );
 }
-
